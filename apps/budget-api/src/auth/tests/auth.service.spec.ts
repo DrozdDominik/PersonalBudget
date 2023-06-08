@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest'
 import { faker } from '@faker-js/faker';
-import { AuthService } from "../services/auth.service";
-import { UsersService } from "../services/users.service";
-import { User } from "../user.entity";
-import { RegisterUserDto } from "../dtos/register-user.dto";
+import { AuthService } from "../auth.service";
+import { UsersService } from "../../users/users.service";
+import { User } from "../../users/user.entity";
+import { RegisterUserDto } from "../../users/dtos/register-user.dto";
 import { BadRequestException } from "@nestjs/common";
-import { NewUserData, UserRole } from "../types";
+import { NewUserData, UserRole } from "../../users/types";
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -28,7 +28,8 @@ describe('AuthService', () => {
                 const newUser = {
                     id,
                     role: UserRole.User,
-                    ...newUserData
+                    ...newUserData,
+                    currentToken: null,
                 }
                 return Promise.resolve(newUser)
             }

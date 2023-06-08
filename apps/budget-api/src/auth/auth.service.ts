@@ -1,9 +1,9 @@
-import { UsersService } from "./users.service";
-import { RegisterUserDto } from "../dtos/register-user.dto";
+import { UsersService } from "../users/users.service";
+import { RegisterUserDto } from "../users/dtos/register-user.dto";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { randomBytes, scrypt as _scrypt } from "crypto";
 import { promisify } from 'util';
-import { NewUserData } from "../types";
+import { NewUserData } from "../users/types";
 
 const scrypt = promisify(_scrypt);
 

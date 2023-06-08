@@ -1,21 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { describe, beforeEach, it, expect } from 'vitest'
 import { UsersController } from '../users.controller';
-import { UsersService } from "../services/users.service";
-import { AuthService } from "../services/auth.service";
-import { TypeORMMySqlTestingModule } from "./utils/TypeORMMySqlTestingModule";
+import { UsersService } from "../users.service";
+import { AuthService } from "../../auth/auth.service";
 import { User } from "../user.entity";
+import { Repository } from "typeorm";
+import { getRepositoryToken } from "@nestjs/typeorm";
 
 describe('UsersController', () => {
   let controller: UsersController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [...TypeORMMySqlTestingModule([User])],
       controllers: [UsersController],
       providers: [
-          UsersService,
           AuthService,
+          UsersService,
+          {
+              provide: getRepositoryToken(User),
+              useClass: Repository,
+          },
           ],
     }).compile();
 

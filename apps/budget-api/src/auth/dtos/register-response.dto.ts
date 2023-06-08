@@ -1,6 +1,6 @@
 import { Expose } from "class-transformer";
 
-export class RegisterUserResponseDto {
+export class RegisterResponseDto {
     @Expose()
     id: string;
 
