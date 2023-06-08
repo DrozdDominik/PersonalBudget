@@ -21,6 +21,10 @@ export class UsersService {
         return this.usersRepository.findOne({where: {email}})
     }
 
+    async findOneByToken(token: string): Promise<User> {
+        return this.usersRepository.findOne({where: {currentToken: token}})
+    }
+
     async findAll(): Promise<User[]> {
         return this.usersRepository.find()
     }

@@ -27,4 +27,10 @@ export class User {
         default: UserRole.User
     })
     role: UserRole
+
+    @Column({
+        nullable: true,
+        default: null,
+    })
+    currentToken: string | null
 }
