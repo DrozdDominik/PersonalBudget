@@ -1,35 +1,93 @@
-import { UsersService } from "../users/users.service";
-import { RegisterUserDto } from "../users/dtos/register-user.dto";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { randomBytes, scrypt as _scrypt } from "crypto";
+import { scrypt as _scrypt } from "crypto";
 import { promisify } from 'util';
-import { NewUserData } from "../users/types";
+import { JwtPayload } from "./jwt.stategy";
+import { sign } from 'jsonwebtoken';
+import { config } from "../config/config";
+import { User } from "../user/user.entity";
+import { v4 as uuid } from 'uuid';
+import { AuthLoginDto } from "./dtos/auth-login.dto";
+import { Response } from 'express';
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+
 
 const scrypt = promisify(_scrypt);
 
+const { jwtSecret, expirationTime } = config.jwt
+
 @Injectable()
 export class AuthService {
-    constructor(private usersService: UsersService) {}
+    constructor(@InjectRepository(User) private usersRepository: Repository<User>) {}
 
-    async register(data: RegisterUserDto) {
-        const user = await this.usersService.findOneByEmail(data.email)
+    private async createJwtToken(token: string): Promise<{accessToken: string, expiresIn: number}> {
+        const payload: JwtPayload = { token };
+        const expiresIn = 60 * 60 * 24;
+        const accessToken = sign(payload, jwtSecret, { expiresIn: expirationTime });
+        return {
+            accessToken,
+            expiresIn,
+        };
+    };
 
-        if (!!user) {
-            throw new BadRequestException('email is use')
+    private async generateToken(user: User): Promise<string> {
+        let token;
+        let userWithThisToken = null;
+        do {
+            token = uuid();
+            userWithThisToken = await this.usersRepository.findOne( {where: {currentToken: token}} );
+        } while (!!userWithThisToken);
+
+        user.currentToken = token
+
+        await this.usersRepository.save(user)
+
+        return token;
+    };
+
+    async login(req: AuthLoginDto, res: Response): Promise<any> {
+        const {email, password} = req
+
+        const user = await this.usersRepository.findOne({where: {email}})
+
+        if (!user) {
+            throw new BadRequestException('incorrect credentials');
         }
 
-        const salt = randomBytes(8).toString('hex')
+        const [storedHash, salt] = user.passwordHash.split('.')
 
-        const hash = ( await scrypt(data.password, salt, 32) ) as Buffer
+        const hash = (await scrypt(password, salt, 32)) as Buffer;
 
-        const result = `${hash.toString('hex')}.${salt}`
-
-        const newUserData: NewUserData = {
-            name: data.name,
-            email: data.email,
-            passwordHash: result,
+        if (storedHash !== hash.toString('hex')) {
+            throw new BadRequestException('incorrect credentials');
         }
 
-        return await this.usersService.create(newUserData)
+        const token = await this.createJwtToken(await this.generateToken(user));
+
+        return res
+            .cookie('jwt', token.accessToken, {
+                secure: false,
+                domain: 'localhost',
+                httpOnly: true,
+            })
+            .json({ok: true});
+    };
+
+    async logout(user: User, res: Response) {
+        try {
+            user.currentToken = null;
+            await this.usersRepository.save(user);
+            res.clearCookie(
+                'jwt',
+                {
+                    secure: false,
+                    domain: 'localhost',
+                    httpOnly: true,
+                }
+            );
+            return res.json({ok: true});
+        } catch (e) {
+            return res.json({error: e.message});
+        }
     }
 }

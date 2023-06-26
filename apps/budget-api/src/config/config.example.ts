@@ -7,5 +7,8 @@ export const config: Config = {
         password: '',
         database: ''
     },
-    jwtSecret: ''
+    jwt: {
+        jwtSecret: '',
+        expirationTime: 0
+    },
 }

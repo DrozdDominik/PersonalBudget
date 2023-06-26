@@ -1,84 +1,36 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest'
-import { faker } from '@faker-js/faker';
 import { AuthService } from "../auth.service";
-import { UsersService } from "../../users/users.service";
-import { User } from "../../users/user.entity";
-import { RegisterUserDto } from "../../users/dtos/register-user.dto";
-import { BadRequestException } from "@nestjs/common";
-import { NewUserData, UserRole } from "../../users/types";
+import { User } from "../../user/user.entity";
+import { getRepositoryToken } from "@nestjs/typeorm";
+import { vi } from "vitest";
+import { Repository } from "typeorm";
 
 describe('AuthService', () => {
     let service: AuthService;
-    let fakeUsersService: Partial<UsersService>;
-
-    const user: Partial<User>= {
-        id: faker.string.uuid(),
-        name: faker.internet.userName(),
-        email: faker.internet.email(),
-    };
+    let repo: Repository<User>;
 
     beforeEach(async () => {
-        fakeUsersService = {
-            findOneByEmail: (email: string) => {
-                return email === user.email ? Promise.resolve(user) : Promise.resolve(null);
-            },
-            create: (newUserData: NewUserData):Promise<User> => {
-                const id = faker.string.uuid()
-                const newUser = {
-                    id,
-                    role: UserRole.User,
-                    ...newUserData,
-                    currentToken: null,
-                }
-                return Promise.resolve(newUser)
-            }
-        }
-
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 AuthService,
                 {
-                    provide: UsersService,
-                    useValue: fakeUsersService,
+                    provide: getRepositoryToken(User),
+                    useValue: {
+                        create: vi.fn(),
+                        save: vi.fn(),
+                        findOne: vi.fn()
+                    }
                 },
             ],
         }).compile();
 
         service = module.get(AuthService);
+
+        repo = module.get<Repository<User>>(getRepositoryToken(User));
     });
 
     it('should be defined', () => {
         expect(service).toBeDefined();
     });
-
-    describe('Register method', () => {
-
-        const invalidData: RegisterUserDto = {
-            name: faker.internet.userName(),
-            email: user.email,
-            password: faker.internet.password()
-        }
-
-        const validData: RegisterUserDto = {
-            name: faker.internet.userName(),
-            email: faker.internet.email(),
-            password: faker.internet.password()
-        }
-
-        it('should throw BadRequestException if email already used', async () => {
-            await expect( service.register(invalidData) ).rejects.toThrowError(BadRequestException)
-        })
-
-        it('should creates a new user with a salted and hashed password', async () =>{
-            const user = await service.register(validData)
-            const [hash, salt] = user.passwordHash.split('.')
-
-            expect(user.passwordHash).not.toEqual(validData.password)
-            expect(hash).toBeDefined()
-            expect(hash).toHaveLength(64)
-            expect(salt).toBeDefined()
-            expect(salt).toHaveLength(16)
-        })
-    })
 });

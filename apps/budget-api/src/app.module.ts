@@ -5,6 +5,7 @@ import { UserModule } from "./user/user.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { join } from 'path'
 import { config } from "./config/config";
+import { AuthModule } from "./auth/auth.module";
 
 const { host, username, password, database } = config.db
 
@@ -18,7 +19,10 @@ const { host, username, password, database } = config.db
     database,
     entities: [join(__dirname, '**', '*.entity.{ts,js}')],
     synchronize: false,
-  }), UsersModule],
+  }),
+    UserModule,
+    AuthModule
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

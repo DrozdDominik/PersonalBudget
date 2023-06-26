@@ -4,7 +4,13 @@ type DbConfig = {
     password: string
     database: string
 }
+
+type JwtConfig = {
+    jwtSecret: string
+    expirationTime: number
+}
+
 export interface Config {
     db: DbConfig
-    jwtSecret: string
+    jwt: JwtConfig
 }
