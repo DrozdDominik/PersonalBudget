@@ -1,21 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { describe, beforeEach, it, expect } from 'vitest'
-import { UsersController } from '../users.controller';
-import { UsersService } from "../users.service";
-import { AuthService } from "../../auth/auth.service";
+import { UserController } from '../user.controller';
+import { UserService } from "../user.service";
 import { User } from "../user.entity";
 import { Repository } from "typeorm";
 import { getRepositoryToken } from "@nestjs/typeorm";
 
 describe('UsersController', () => {
-  let controller: UsersController;
+  let controller: UserController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UsersController],
+      controllers: [UserController],
       providers: [
-          AuthService,
-          UsersService,
+          UserService,
           {
               provide: getRepositoryToken(User),
               useClass: Repository,
@@ -23,7 +21,7 @@ describe('UsersController', () => {
           ],
     }).compile();
 
-    controller = module.get<UsersController>(UsersController);
+    controller = module.get<UserController>(UserController);
   });
 
   it('should be defined', () => {
