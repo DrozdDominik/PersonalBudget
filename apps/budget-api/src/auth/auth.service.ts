@@ -1,34 +1,19 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { scrypt as _scrypt } from "crypto";
 import { promisify } from 'util';
-import { JwtPayload } from "./jwt.stategy";
-import { sign } from 'jsonwebtoken';
-import { config } from "../config/config";
 import { User } from "../user/user.entity";
 import { v4 as uuid } from 'uuid';
 import { AuthLoginDto } from "./dtos/auth-login.dto";
 import { Response } from 'express';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-
+import { createJwtToken } from "./jwt/token";
 
 const scrypt = promisify(_scrypt);
-
-const { jwtSecret, expirationTime } = config.jwt
 
 @Injectable()
 export class AuthService {
     constructor(@InjectRepository(User) private usersRepository: Repository<User>) {}
-
-    private async createJwtToken(token: string): Promise<{accessToken: string, expiresIn: number}> {
-        const payload: JwtPayload = { token };
-        const expiresIn = 60 * 60 * 24;
-        const accessToken = sign(payload, jwtSecret, { expiresIn: expirationTime });
-        return {
-            accessToken,
-            expiresIn,
-        };
-    };
 
     private async generateToken(user: User): Promise<string> {
         let token;
@@ -62,7 +47,7 @@ export class AuthService {
             throw new BadRequestException('incorrect credentials');
         }
 
-        const token = await this.createJwtToken(await this.generateToken(user));
+        const token = await createJwtToken(await this.generateToken(user));
 
         return res
             .cookie('jwt', token.accessToken, {
