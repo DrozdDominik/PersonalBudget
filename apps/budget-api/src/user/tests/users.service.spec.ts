@@ -56,8 +56,6 @@ describe('UsersService', () => {
 
     it('should call hashPassword function', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
-      vi.spyOn(repo, 'create')
-      vi.spyOn(repo, 'save')
 
       await service.register(registerData)
       expect(utils.hashPassword).toHaveBeenCalledWith(registerData.password)
@@ -65,8 +63,6 @@ describe('UsersService', () => {
 
     it('should throw error if provided email is already taken', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testUser as User)
-      vi.spyOn(repo, 'create')
-      vi.spyOn(repo, 'save')
 
       await expect( service.register(registerData) ).rejects.toThrowError(BadRequestException)
     })
@@ -81,7 +77,6 @@ describe('UsersService', () => {
 
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'create')
-      vi.spyOn(repo, 'save')
 
       await service.register(registerData)
 
