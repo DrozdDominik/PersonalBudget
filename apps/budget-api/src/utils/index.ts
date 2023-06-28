@@ -10,3 +10,11 @@ export const hashPassword = async (password: string): Promise<string> => {
 
     return `${hash.toString('hex')}.${salt}`
 }
+
+export const verifyPassword = async (passwordHash: string, password: string): Promise<boolean> => {
+    const [storedHash, salt] = passwordHash.split('.')
+
+    const hash = (await scrypt(password, salt, 32)) as Buffer;
+
+    return storedHash === hash.toString('hex')
+}

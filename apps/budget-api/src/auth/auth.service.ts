@@ -1,6 +1,4 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { scrypt as _scrypt } from "crypto";
-import { promisify } from 'util';
 import { User } from "../user/user.entity";
 import { v4 as uuid } from 'uuid';
 import { AuthLoginDto } from "./dtos/auth-login.dto";
@@ -8,8 +6,7 @@ import { Response } from 'express';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { createJwtToken } from "./jwt/token";
-
-const scrypt = promisify(_scrypt);
+import { verifyPassword } from "../utils";
 
 @Injectable()
 export class AuthService {
@@ -39,11 +36,7 @@ export class AuthService {
             throw new BadRequestException('incorrect credentials');
         }
 
-        const [storedHash, salt] = user.passwordHash.split('.')
-
-        const hash = (await scrypt(password, salt, 32)) as Buffer;
-
-        if (storedHash !== hash.toString('hex')) {
+        if (!await verifyPassword(user.passwordHash, password)) {
             throw new BadRequestException('incorrect credentials');
         }
 
@@ -51,7 +44,7 @@ export class AuthService {
 
         return res
             .cookie('jwt', token.accessToken, {
-                secure: false,
+                secure: true,
                 domain: 'localhost',
                 httpOnly: true,
             })
@@ -62,15 +55,14 @@ export class AuthService {
         try {
             user.currentToken = null;
             await this.usersRepository.save(user);
-            res.clearCookie(
-                'jwt',
+            return res
+                .clearCookie('jwt',
                 {
-                    secure: false,
+                    secure: true,
                     domain: 'localhost',
                     httpOnly: true,
-                }
-            );
-            return res.json({ok: true});
+                })
+                .json({ok: true});
         } catch (e) {
             return res.json({error: e.message});
         }
