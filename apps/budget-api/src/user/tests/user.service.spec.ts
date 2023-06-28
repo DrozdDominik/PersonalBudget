@@ -8,15 +8,19 @@ import { Repository } from 'typeorm';
 import { RegisterUserDto } from "../dtos/register-user.dto";
 import { BadRequestException } from "@nestjs/common";
 import * as utils from "../../utils";
+import { UserRole } from "../types";
 
 describe('UsersService', () => {
   let service: UserService;
   let repo: Repository<User>;
 
-  const testUser: Partial<User>= {
+  const testUser: User = {
     id: faker.string.uuid(),
     name: faker.internet.userName(),
     email: faker.internet.email(),
+    passwordHash: faker.internet.password(),
+    currentToken: null,
+    role: UserRole.User
   };
 
   const registerData: RegisterUserDto = {
@@ -62,7 +66,7 @@ describe('UsersService', () => {
     })
 
     it('should throw error if provided email is already taken', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testUser as User)
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testUser)
 
       await expect( service.register(registerData) ).rejects.toThrowError(BadRequestException)
     })
