@@ -36,3 +36,6 @@ lerna-debug.log*
 
 # Config
 src/config/config.ts
+
+# Migrations
+src/migrations/*
