@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Income } from "./income.entity";
 import { Repository } from "typeorm";
@@ -15,6 +15,18 @@ export class IncomeService {
     async create(data: CreateIncomeDto, user: User): Promise<Income> {
         const income = this.incomeRepository.create(data)
         income.user = user
+        return this.incomeRepository.save(income)
+    }
+
+    async edit(id: string, data: Partial<CreateIncomeDto>): Promise<Income> {
+        const income = await this.incomeRepository.findOne( { where: {id}, relations: {user: true}})
+
+        if (!income) {
+            throw new NotFoundException()
+        }
+
+        Object.assign(income, data)
+
         return this.incomeRepository.save(income)
     }
 }
