@@ -20,7 +20,8 @@ describe('UsersService', () => {
     email: faker.internet.email(),
     passwordHash: faker.internet.password(),
     currentToken: null,
-    role: UserRole.User
+    role: UserRole.User,
+    incomes: [],
   };
 
   const registerData: RegisterUserDto = {
