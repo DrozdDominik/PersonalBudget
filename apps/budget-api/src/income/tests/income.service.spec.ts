@@ -48,6 +48,12 @@ describe('IncomeService', () => {
     ...editedData
   }
 
+  const testIncomeData: CreateIncomeDto = {
+    name: faker.word.noun(),
+    amount: Number(faker.finance.amount(0, 1000000, 2)),
+    date: faker.date.anytime({refDate: '18-06-2023'}),
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -73,26 +79,47 @@ describe('IncomeService', () => {
   });
 
   describe('Edit method', () => {
-    it('should edit income correctly', async () => {
+    it('should call incomeRepository.save method with correctly edited data', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testIncome)
 
       await service.edit(testIds, editedData)
 
       expect(repo.save).toHaveBeenCalledWith(testEditedIncome)
     })
+
+    it('should throw error if income not exists', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
+
+      await expect( service.edit(testIds, editedData) ).rejects.toThrowError(NotFoundException)
+    })
+
+    it('should throw error if income belongs to another user', async () => {
+      testIncome.user.id = faker.string.uuid()
+
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testIncome)
+
+      await expect( service.edit(testIds, editedData) ).rejects.toThrowError(ForbiddenException)
+    })
   })
 
-  it('should throw error if income not exists', async () => {
-    vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
+  describe('Create method', () => {
+    it('should call incomeRepository.save method with correct data', async () => {
+      const createdIncome: Income = {
+        ...testIncomeData,
+        id: undefined,
+        user: undefined
+      }
 
-    await expect( service.edit(testIds, editedData) ).rejects.toThrowError(NotFoundException)
-  })
+      const incomeToSave = {
+        ...createdIncome,
+        user: testUser,
+      }
 
-  it('should throw error if income belongs to another user', async () => {
-    testIncome.user.id = faker.string.uuid()
+      vi.spyOn(repo, 'create').mockReturnValueOnce(createdIncome)
 
-    vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testIncome)
+      await service.create(testIncomeData, testUser)
 
-    await expect( service.edit(testIds, editedData) ).rejects.toThrowError(ForbiddenException)
+      expect(repo.save).toHaveBeenCalledWith(incomeToSave)
+    })
   })
 });
