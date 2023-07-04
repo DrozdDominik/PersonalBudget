@@ -14,3 +14,8 @@ export interface Config {
     db: DbConfig
     jwt: JwtConfig
 }
+
+export type TransactionIds = {
+    userId: string
+    transactionId: string
+}
