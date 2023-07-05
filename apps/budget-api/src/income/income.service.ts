@@ -60,7 +60,7 @@ export class IncomeService {
             throw new ForbiddenException()
         }
 
-        const { affected} = await this.incomeRepository.delete(income.id)
+        const { affected } = await this.incomeRepository.delete(income.id)
 
         return affected === 1
     }
