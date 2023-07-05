@@ -18,14 +18,14 @@ export class IncomeController {
 
     @UseGuards(AuthGuard('jwt'))
     @Serialize(CreateIncomeResponse)
-    @Post('/add')
+    @Post('/')
     createIncome(@Body() newIncome: CreateIncomeDto, @CurrentUser() user: User): Promise<Income> {
         return this.incomeService.create(newIncome, user)
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Serialize(CreateIncomeResponse)
-    @Post('/edit/:id')
+    @Patch('/:id')
     editIncome(
         @Param('id') id: string,
         @Body() editedData: EditIncomeDto,
