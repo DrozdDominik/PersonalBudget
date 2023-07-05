@@ -8,7 +8,7 @@ import { User } from "../user/user.entity";
 import { Serialize } from "../interceptors/serialize.interceptor";
 import { CreateIncomeResponse } from "./dtos/create-income-response";
 import { EditIncomeDto } from "./dtos/edit-income.dto";
-import { TransactionIds } from "../types";
+import { TransactionIdentificationData } from "../types";
 
 @Controller('income')
 export class IncomeController {
@@ -28,10 +28,16 @@ export class IncomeController {
     @Post('/edit/:id')
     editIncome(
         @Param('id') id: string,
-        @Body() data: EditIncomeDto,
+        @Body() editedData: EditIncomeDto,
         @CurrentUser() user: User
     ): Promise<Income> {
-        const ids: TransactionIds = {userId: user.id, transactionId: id}
-        return this.incomeService.edit(ids, data)
+        const identificationData: TransactionIdentificationData = {
+            transactionId: id,
+            user: {
+                id: user.id,
+                role: user.role
+            }
+        }
+        return this.incomeService.edit(identificationData, editedData)
     }
 }

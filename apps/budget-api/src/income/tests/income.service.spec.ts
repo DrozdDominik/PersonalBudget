@@ -8,7 +8,7 @@ import { CreateIncomeDto } from "../dtos/create-income.dto";
 import { faker } from "@faker-js/faker";
 import { User } from "../../user/user.entity";
 import { UserRole } from "../../user/types";
-import { TransactionIds } from "../../types";
+import { TransactionIdentificationData } from "../../types";
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 
 describe('IncomeService', () => {
@@ -25,6 +25,16 @@ describe('IncomeService', () => {
     incomes: [],
   }
 
+  const testAdmin: User = {
+    id: faker.string.uuid(),
+    name: faker.internet.userName(),
+    email: faker.internet.email(),
+    passwordHash: faker.internet.password(),
+    currentToken: null,
+    role: UserRole.Admin,
+    incomes: [],
+  }
+
   const testIncome: Income = {
     id: faker.string.uuid(),
     name: faker.word.noun(),
@@ -38,9 +48,20 @@ describe('IncomeService', () => {
     amount: Number(faker.finance.amount(0, 1000000, 2))
   }
 
-  const testIds: TransactionIds = {
-    userId: testUser.id,
+  const testIdentificationData: TransactionIdentificationData = {
     transactionId: testIncome.id,
+    user: {
+      id: testUser.id,
+      role: testUser.role
+    }
+  }
+
+  const testAdminIdentificationData: TransactionIdentificationData = {
+    transactionId: testIncome.id,
+    user: {
+      id: testAdmin.id,
+      role: testAdmin.role
+    }
   }
 
   const testEditedIncome: Income = {
@@ -82,7 +103,7 @@ describe('IncomeService', () => {
     it('should call incomeRepository.save method with correctly edited data', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testIncome)
 
-      await service.edit(testIds, editedData)
+      await service.edit(testIdentificationData, editedData)
 
       expect(repo.save).toHaveBeenCalledWith(testEditedIncome)
     })
@@ -90,7 +111,7 @@ describe('IncomeService', () => {
     it('should throw error if income not exists', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
 
-      await expect( service.edit(testIds, editedData) ).rejects.toThrowError(NotFoundException)
+      await expect( service.edit(testIdentificationData, editedData) ).rejects.toThrowError(NotFoundException)
     })
 
     it('should throw error if income belongs to another user', async () => {
@@ -98,7 +119,17 @@ describe('IncomeService', () => {
 
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testIncome)
 
-      await expect( service.edit(testIds, editedData) ).rejects.toThrowError(ForbiddenException)
+      await expect( service.edit(testIdentificationData, editedData) ).rejects.toThrowError(ForbiddenException)
+    })
+
+    it('should not throw error if admin edit income belongs to another user', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testIncome)
+
+      await service.edit(testAdminIdentificationData, editedData)
+
+      expect(testAdminIdentificationData.user.role).toEqual(UserRole.Admin)
+      expect(testIncome.user.id).not.toEqual(testAdminIdentificationData.user.id)
+      expect(repo.save).toHaveBeenCalledWith(testEditedIncome)
     })
   })
 

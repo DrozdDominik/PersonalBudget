@@ -1,3 +1,5 @@
+import { UserIdentificationData } from "../user/types";
+
 type DbConfig = {
     host: string
     username: string
@@ -15,7 +17,7 @@ export interface Config {
     jwt: JwtConfig
 }
 
-export type TransactionIds = {
-    userId: string
+export type TransactionIdentificationData = {
     transactionId: string
+    user: UserIdentificationData
 }

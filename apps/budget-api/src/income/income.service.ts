@@ -4,7 +4,8 @@ import { Income } from "./income.entity";
 import { Repository } from "typeorm";
 import { CreateIncomeDto } from "./dtos/create-income.dto";
 import { User } from "../user/user.entity"
-import { TransactionIds } from "../types";
+import { TransactionIdentificationData } from "../types";
+import { UserRole } from "../user/types";
 
 @Injectable()
 export class IncomeService {
@@ -19,18 +20,27 @@ export class IncomeService {
         return this.incomeRepository.save(income)
     }
 
-    async edit(ids: TransactionIds, data: Partial<CreateIncomeDto>): Promise<Income> {
-        const income = await this.incomeRepository.findOne( { where: {id: ids.transactionId}, relations: {user: true}})
+    async edit(
+        identificationData: TransactionIdentificationData,
+        editedData: Partial<CreateIncomeDto>
+    ): Promise<Income> {
+        const { transactionId, user } = identificationData
+
+        const income = await this.incomeRepository.findOne(
+            { where: {id: transactionId},
+                relations: {user: true}
+            }
+        )
 
         if (!income) {
             throw new NotFoundException()
         }
 
-        if (income.user.id !== ids.userId) {
+        if (income.user.id !== user.id && user.role !== UserRole.Admin) {
             throw new ForbiddenException()
         }
 
-        Object.assign(income, data)
+        Object.assign(income, editedData)
 
         return this.incomeRepository.save(income)
     }
