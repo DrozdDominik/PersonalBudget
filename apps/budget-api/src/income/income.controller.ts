@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { IncomeService } from "./income.service";
 import { Income } from "./income.entity";
 import { CreateIncomeDto } from "./dtos/create-income.dto";
@@ -9,6 +9,7 @@ import { Serialize } from "../interceptors/serialize.interceptor";
 import { CreateIncomeResponse } from "./dtos/create-income-response";
 import { EditIncomeDto } from "./dtos/edit-income.dto";
 import { TransactionIdentificationData } from "../types";
+import { UserIdentificationData } from "../user/types";
 
 @Controller('income')
 export class IncomeController {
@@ -39,5 +40,19 @@ export class IncomeController {
             }
         }
         return this.incomeService.edit(identificationData, editedData)
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Delete('/:id')
+    deleteIncome(
+        @Param('id') id: string,
+        @CurrentUser() user: User
+    ): Promise<boolean> {
+        const userData: UserIdentificationData = {
+            id: user.id,
+            role: user.role
+        }
+
+        return this.incomeService.delete(id, userData)
     }
 }
