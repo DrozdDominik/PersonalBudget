@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { IncomeService } from "./income.service";
 import { Income } from "./income.entity";
 import { CreateIncomeDto } from "./dtos/create-income.dto";
@@ -54,5 +54,28 @@ export class IncomeController {
         }
 
         return this.incomeService.delete(id, userData)
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('/')
+    getAll(@CurrentUser() user: User): Promise<Income[]> {
+        const userData: UserIdentificationData = {
+            id: user.id,
+            role: user.role
+        }
+        return this.incomeService.getAll(userData)
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('/:id')
+    getOne(
+        @Param('id') id: string,
+        @CurrentUser() user: User
+    ): Promise<Income> {
+        const userData: UserIdentificationData = {
+            id: user.id,
+            role: user.role
+        }
+        return this.incomeService.getOne(id,userData)
     }
 }

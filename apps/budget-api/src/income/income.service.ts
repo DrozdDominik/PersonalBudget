@@ -26,19 +26,7 @@ export class IncomeService {
     ): Promise<Income> {
         const { transactionId, user } = identificationData
 
-        const income = await this.incomeRepository.findOne(
-            { where: {id: transactionId},
-                relations: {user: true}
-            }
-        )
-
-        if (!income) {
-            throw new NotFoundException()
-        }
-
-        if (income.user.id !== user.id && user.role !== UserRole.Admin) {
-            throw new ForbiddenException()
-        }
+        const income = await this.getOne(transactionId, user)
 
         Object.assign(income, editedData)
 
@@ -46,6 +34,14 @@ export class IncomeService {
     }
 
     async delete(id: string, user: UserIdentificationData): Promise<boolean> {
+        const income = await this.getOne(id, user)
+
+        const { affected } = await this.incomeRepository.delete(income.id)
+
+        return affected === 1
+    }
+
+    async getOne(id: string, user: UserIdentificationData): Promise<Income> {
         const income = await this.incomeRepository.findOne(
             { where: {id},
                 relations: {user: true}
@@ -60,8 +56,23 @@ export class IncomeService {
             throw new ForbiddenException()
         }
 
-        const { affected } = await this.incomeRepository.delete(income.id)
+        return income
+    }
 
-        return affected === 1
+    async getAll(user: UserIdentificationData): Promise<Income[]> {
+        if (user.role === UserRole.Admin) {
+           return await this.incomeRepository.find({
+               relations: {user: true},
+           })
+        }
+
+        return await this.incomeRepository.find({
+            relations: {user: true},
+            where: {
+                user: {
+                    id: user.id
+                }
+            }
+        })
     }
 }
