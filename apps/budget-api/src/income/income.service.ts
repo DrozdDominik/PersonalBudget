@@ -60,19 +60,19 @@ export class IncomeService {
     }
 
     async getAll(user: UserIdentificationData): Promise<Income[]> {
-        if (user.role === UserRole.Admin) {
-           return await this.incomeRepository.find({
+       return user.role === UserRole.Admin
+           ?
+           await this.incomeRepository.find({
+              relations: {user: true},
+          })
+           :
+           await this.incomeRepository.find({
                relations: {user: true},
+               where: {
+                   user: {
+                       id: user.id
+                   }
+               }
            })
-        }
-
-        return await this.incomeRepository.find({
-            relations: {user: true},
-            where: {
-                user: {
-                    id: user.id
-                }
-            }
-        })
-    }
+   }
 }
