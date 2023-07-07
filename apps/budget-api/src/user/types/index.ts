@@ -8,3 +8,8 @@ export interface NewUserData {
     email: string;
     passwordHash: string;
 }
+
+export type UserIdentificationData = {
+    id: string
+    role: UserRole
+}

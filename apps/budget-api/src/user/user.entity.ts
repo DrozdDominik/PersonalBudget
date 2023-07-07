@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { UserRole } from "./types";
+import { Income } from "../income/income.entity";
 
 @Entity()
 export class User {
@@ -33,4 +34,7 @@ export class User {
         default: null,
     })
     currentToken: string | null
+
+    @OneToMany(() => Income, income => income.user )
+    incomes: Income[]
 }
