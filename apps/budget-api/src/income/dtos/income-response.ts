@@ -1,6 +1,6 @@
 import { Expose, Transform } from "class-transformer";
 
-export class CreateIncomeResponse {
+export class IncomeResponse {
     @Expose()
     id: string
 

@@ -6,7 +6,7 @@ import { AuthGuard } from "@nestjs/passport";
 import { CurrentUser } from "../decorators/current-user.decorator";
 import { User } from "../user/user.entity";
 import { Serialize } from "../interceptors/serialize.interceptor";
-import { CreateIncomeResponse } from "./dtos/create-income-response";
+import { IncomeResponse } from "./dtos/income-response";
 import { EditIncomeDto } from "./dtos/edit-income.dto";
 import { TransactionIdentificationData } from "../types";
 import { UserIdentificationData } from "../user/types";
@@ -18,14 +18,14 @@ export class IncomeController {
     ) {}
 
     @UseGuards(AuthGuard('jwt'))
-    @Serialize(CreateIncomeResponse)
+    @Serialize(IncomeResponse)
     @Post('/')
     createIncome(@Body() newIncome: CreateIncomeDto, @CurrentUser() user: User): Promise<Income> {
         return this.incomeService.create(newIncome, user)
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Serialize(CreateIncomeResponse)
+    @Serialize(IncomeResponse)
     @Patch('/:id')
     editIncome(
         @Param('id') id: string,
@@ -57,6 +57,7 @@ export class IncomeController {
     }
 
     @UseGuards(AuthGuard('jwt'))
+    @Serialize(IncomeResponse)
     @Get('/')
     getAll(@CurrentUser() user: User): Promise<Income[]> {
         const userData: UserIdentificationData = {
@@ -67,6 +68,7 @@ export class IncomeController {
     }
 
     @UseGuards(AuthGuard('jwt'))
+    @Serialize(IncomeResponse)
     @Get('/:id')
     getOne(
         @Param('id') id: string,
