@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Income } from "./income.entity";
 import { Repository } from "typeorm";
@@ -6,17 +6,30 @@ import { CreateIncomeDto } from "./dtos/create-income.dto";
 import { User } from "../user/user.entity"
 import { TransactionIdentificationData } from "../types";
 import { UserIdentificationData, UserRole } from "../user/types";
+import { CategoryService } from "../category/category.service";
 
 @Injectable()
 export class IncomeService {
     constructor(
         @InjectRepository(Income)
-        private incomeRepository: Repository<Income>
+        private incomeRepository: Repository<Income>,
+        @Inject(CategoryService) private categoryService: CategoryService,
     ) {}
 
     async create(data: CreateIncomeDto, user: User): Promise<Income> {
-        const income = this.incomeRepository.create(data)
+        const { categoryName, ...incomeData} = data
+
+        const category = await this.categoryService.findByName(categoryName)
+
+        if (!category) {
+            throw new NotFoundException()
+        }
+
+        const income = this.incomeRepository.create(incomeData)
+
         income.user = user
+        income.category = category
+
         return this.incomeRepository.save(income)
     }
 

@@ -2,7 +2,7 @@ import { IsDateString, IsNumber, IsString, Min } from "class-validator";
 
 export class CreateIncomeDto {
     @IsString()
-    name: string;
+    categoryName: string;
 
     @IsNumber({
         maxDecimalPlaces: 2,
