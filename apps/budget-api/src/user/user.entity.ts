@@ -1,6 +1,7 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { UserRole } from "./types";
 import { Income } from "../income/income.entity";
+import { Category } from "../category/category.entity";
 
 @Entity()
 export class User {
@@ -37,4 +38,7 @@ export class User {
 
     @OneToMany(() => Income, income => income.user )
     incomes: Income[]
+
+    @OneToMany(() => Category, category => category.user )
+    categories: Category[]
 }
