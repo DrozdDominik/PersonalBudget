@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Delete, Param } from '@nestjs/common';
 import { CategoryService } from "./category.service";
 import { AuthGuard } from "@nestjs/passport";
 import { AdminGuard } from "../guards/AdminGuard";
@@ -24,5 +24,11 @@ export class CategoryController {
     @Post('/')
     add(@Body() newCategory: CreateCategoryDto, @CurrentUser() user: User) {
         return this.categoryService.create(newCategory, user)
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Delete('/:id')
+    delete(@Param('id') id: string, @CurrentUser() user: User) {
+        return this.categoryService.delete(id, user.id)
     }
 }

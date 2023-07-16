@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Category } from "./category.entity";
 import { Repository } from "typeorm";
@@ -25,6 +25,19 @@ export class CategoryService {
         return await this.categoryRepository.findOne({
             where: {
                 name: name.toLowerCase(),
+                user: {
+                    id: userId
+                }
+            }
+        })
+    }
+
+    async findCustomById(id: string, userId: string) {
+        return await this.categoryRepository.findOne({
+            relations: {incomes: true},
+            where: {
+                id,
+                isDefault: false,
                 user: {
                     id: userId
                 }
@@ -70,5 +83,18 @@ export class CategoryService {
 
         const newCategory = this.categoryRepository.create(newCategoryData)
         return this.categoryRepository.save(newCategory)
+    }
+
+
+    async delete(id: string, userId: string) {
+        const category = await this.findCustomById(id, userId)
+
+        if (!category) {
+            throw new NotFoundException()
+        }
+
+        const { affected } = await this.categoryRepository.delete(category.id)
+
+        return affected === 1
     }
 }
