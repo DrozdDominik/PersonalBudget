@@ -1,15 +1,11 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../user/user.entity";
+import { Category } from "../category/category.entity";
 
 @Entity()
 export class Income {
     @PrimaryGeneratedColumn("uuid")
     id: string;
-
-    @Column({
-        length: 30,
-    })
-    name: string;
 
     @Column({
         type: "decimal",
@@ -27,4 +23,7 @@ export class Income {
 
     @ManyToOne(() => User, user => user.incomes)
     user: User
+
+    @ManyToOne(() => Category, category => category.incomes, {onDelete: "SET NULL"})
+    category: Category
 }
