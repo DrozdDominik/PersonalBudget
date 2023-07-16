@@ -5,6 +5,8 @@ import { IncomeService } from "../income.service";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Income } from "../income.entity";
 import { Repository } from "typeorm";
+import { CategoryService } from "../../category/category.service";
+import { Category } from "../../category/category.entity";
 
 describe('IncomeController', () => {
   let controller: IncomeController;
@@ -14,8 +16,13 @@ describe('IncomeController', () => {
       controllers: [IncomeController],
       providers: [
           IncomeService,
+          CategoryService,
         {
           provide: getRepositoryToken(Income),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Category),
           useClass: Repository,
         },
       ]

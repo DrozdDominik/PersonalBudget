@@ -11,10 +11,14 @@ import { UserIdentificationData, UserRole } from "../../user/types";
 import { TransactionIdentificationData } from "../../types";
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { incomeFactory } from "./utils";
+import { Category } from "../../category/category.entity";
+import { CategoryService } from "../../category/category.service";
 
 describe('IncomeService', () => {
   let service: IncomeService;
   let repo: Repository<Income>
+  let categoryService: CategoryService
+  let categoryRepo: Repository<Category>
 
   const firstUser: User = {
     id: faker.string.uuid(),
@@ -24,6 +28,7 @@ describe('IncomeService', () => {
     currentToken: null,
     role: UserRole.User,
     incomes: [],
+    categories: [],
   }
 
   const admin: User = {
@@ -34,12 +39,13 @@ describe('IncomeService', () => {
     currentToken: null,
     role: UserRole.Admin,
     incomes: [],
+    categories: [],
   }
 
   const [firstUserIncome] = incomeFactory(1, firstUser.id)
 
   const editedData: Partial<CreateIncomeDto> = {
-    name: faker.word.noun(),
+    categoryName: faker.word.noun(),
     amount: Number(faker.finance.amount(0, 1000000, 2))
   }
 
@@ -78,8 +84,16 @@ describe('IncomeService', () => {
     ...editedData
   }
 
-  const incomeData: CreateIncomeDto = {
+  const category: Category = {
+    id: faker.string.uuid(),
     name: faker.word.noun(),
+    isDefault: false,
+    user: firstUser,
+    incomes: [],
+  }
+
+  const incomeData: CreateIncomeDto = {
+    categoryName: faker.word.noun(),
     amount: Number(faker.finance.amount(0, 1000000, 2)),
     date: faker.date.anytime({refDate: '18-06-2023'}),
   }
@@ -88,6 +102,7 @@ describe('IncomeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
           IncomeService,
+          CategoryService,
         {
           provide: getRepositoryToken(Income),
           useValue: {
@@ -98,12 +113,22 @@ describe('IncomeService', () => {
             find: vi.fn(),
           }
         },
+        {
+          provide: getRepositoryToken(Category),
+          useValue: {
+            findOne: vi.fn(),
+          }
+        },
       ],
     }).compile();
 
     service = module.get<IncomeService>(IncomeService);
 
     repo = module.get<Repository<Income>>(getRepositoryToken(Income));
+
+    categoryService = module.get<CategoryService>(CategoryService)
+
+    categoryRepo = module.get<Repository<Category>>(getRepositoryToken(Category))
   });
 
   it('should be defined', () => {
@@ -145,7 +170,9 @@ describe('IncomeService', () => {
   describe('Create method', () => {
     it('should call incomeRepository.save method with correct data', async () => {
       const createdIncome: Income = {
-        ...incomeData,
+        category,
+        amount: incomeData.amount,
+        date: incomeData.date,
         id: undefined,
         user: undefined
       }
@@ -156,6 +183,7 @@ describe('IncomeService', () => {
       }
 
       vi.spyOn(repo, 'create').mockReturnValueOnce(createdIncome)
+      vi.spyOn(categoryRepo, 'findOne').mockResolvedValueOnce(category)
 
       await service.create(incomeData, firstUser)
 
@@ -203,6 +231,7 @@ describe('IncomeService', () => {
   describe('Get one method', () => {
     it('should return income if provided correct data', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryRepo, 'findOne').mockResolvedValueOnce(category)
 
      const income = await service.getOne(firstUserIncome.id, firstUserIdentificationData)
 
