@@ -21,7 +21,7 @@ export class Income {
     })
     date: Date
 
-    @ManyToOne(() => User, user => user.incomes)
+    @ManyToOne(() => User, user => user.incomes, {onDelete: "CASCADE"})
     user: User
 
     @ManyToOne(() => Category, category => category.incomes, {onDelete: "SET NULL"})
