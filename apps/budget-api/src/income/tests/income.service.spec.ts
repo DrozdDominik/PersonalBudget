@@ -49,6 +49,14 @@ describe('IncomeService', () => {
     amount: Number(faker.finance.amount(0, 1000000, 2))
   }
 
+  const editedCategory: Category = {
+    id: faker.string.uuid(),
+    name: editedData.categoryName,
+    isDefault: false,
+    user: firstUser,
+    incomes: [],
+  }
+
   const firstUserIdentificationData: UserIdentificationData = {
     id: firstUser.id,
     role: firstUser.role
@@ -81,7 +89,8 @@ describe('IncomeService', () => {
 
   const editedIncome: Income = {
     ...firstUserIncome,
-    ...editedData
+    category: editedCategory,
+    amount: editedData.amount
   }
 
   const category: Category = {
@@ -138,6 +147,7 @@ describe('IncomeService', () => {
   describe('Edit method', () => {
     it('should call incomeRepository.save method with correctly edited data', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndName').mockResolvedValueOnce(editedCategory)
 
       await service.edit(firstIncomeIdentificationData, editedData)
 
@@ -158,6 +168,7 @@ describe('IncomeService', () => {
 
     it('should not throw error if admin edit income belongs to another user', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndName').mockResolvedValueOnce(editedCategory)
 
       await service.edit(adminIncomeIdentificationData, editedData)
 
@@ -264,7 +275,10 @@ describe('IncomeService', () => {
   describe('Get all method', () => {
     it('should call incomeRepository.find method with correct options when user is not admin', async () => {
       const optionsForUser = {
-        relations: {user: true},
+        relations: {
+          user: true,
+          category: true,
+        },
         where: {
           user: {
             id: firstUser.id
@@ -279,7 +293,10 @@ describe('IncomeService', () => {
 
     it('should call incomeRepository.find method with correct options when user is admin', async () => {
       const optionsForAdmin = {
-        relations: {user: true}
+        relations: {
+          user: true,
+          category: true,
+        }
       }
 
       await service.getAll(adminIdentificationData)
