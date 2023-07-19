@@ -19,11 +19,7 @@ export class IncomeService {
     async create(data: CreateIncomeDto, user: User): Promise<Income> {
         const { categoryName, ...incomeData} = data
 
-        const category = await this.categoryService.findByName(categoryName)
-
-        if (!category) {
-            throw new NotFoundException()
-        }
+        const category = await this.categoryService.findDefaultOrCustomByUserAndName(categoryName, user.id)
 
         const income = this.incomeRepository.create(incomeData)
 
@@ -41,7 +37,18 @@ export class IncomeService {
 
         const income = await this.getOne(transactionId, user)
 
-        Object.assign(income, editedData)
+        const { categoryName, ...dataToEdit } = editedData
+
+        Object.assign(income, dataToEdit)
+
+        if (!!categoryName) {
+             const category = await this.categoryService.findDefaultOrCustomByUserAndName(
+                categoryName,
+                user.id
+            )
+
+            Object.assign(income.category, category)
+        }
 
         return this.incomeRepository.save(income)
     }
@@ -57,7 +64,10 @@ export class IncomeService {
     async getOne(id: string, user: UserIdentificationData): Promise<Income> {
         const income = await this.incomeRepository.findOne(
             { where: {id},
-                relations: {user: true}
+                relations: {
+                user: true,
+                category: true,
+                }
             }
         )
 
@@ -76,11 +86,17 @@ export class IncomeService {
        return user.role === UserRole.Admin
            ?
            await this.incomeRepository.find({
-              relations: {user: true},
+              relations: {
+                  user: true,
+                  category: true,
+              },
           })
            :
            await this.incomeRepository.find({
-               relations: {user: true},
+               relations: {
+                   user: true,
+                   category: true
+               },
                where: {
                    user: {
                        id: user.id
