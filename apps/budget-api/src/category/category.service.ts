@@ -13,15 +13,16 @@ export class CategoryService {
         private categoryRepository: Repository<Category>
     ) {}
 
-    async findByName(name: string): Promise<Category | null> {
+    async findDefaultByName(name: string): Promise<Category | null> {
         return await this.categoryRepository.findOne({
             where: {
-                name: name.toLowerCase()
+                name: name.toLowerCase(),
+                isDefault: true,
             }
         })
     }
 
-    async findByUserAndName(name: string, userId: string) {
+    async findByUserAndName(name: string, userId: string):Promise<Category | null> {
         return await this.categoryRepository.findOne({
             where: {
                 name: name.toLowerCase(),
@@ -45,10 +46,26 @@ export class CategoryService {
         })
     }
 
-    async createDefault(data: CreateCategoryDto) {
-        const category = await this.findByName(data.name)
+    async findDefaultOrCustomByUserAndName(name: string, userId: string): Promise<Category> {
+        const defaultCategory = await this.findDefaultByName(name)
 
-        if (category) {
+        if (defaultCategory) {
+            return defaultCategory
+        }
+
+        const category = await this.findByUserAndName(name,userId)
+
+        if (!category) {
+            throw  new NotFoundException()
+        }
+
+        return category
+    }
+
+    async createDefault(data: CreateCategoryDto) {
+        const defaultCategory = await this.findDefaultByName(data.name)
+
+        if (defaultCategory) {
             throw new BadRequestException()
         }
 
@@ -58,12 +75,12 @@ export class CategoryService {
             user: null,
         }
 
-        const newCategory = this.categoryRepository.create(newCategoryData)
-        return this.categoryRepository.save(newCategory)
+        const newDefaultCategory = this.categoryRepository.create(newCategoryData)
+        return this.categoryRepository.save(newDefaultCategory)
     }
 
     async create(data: CreateCategoryDto, user: User) {
-        const defaultCategory = await this.findByName(data.name)
+        const defaultCategory = await this.findDefaultByName(data.name)
 
         if (defaultCategory) {
             throw new BadRequestException()
