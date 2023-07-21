@@ -62,6 +62,17 @@ export class CategoryService {
         return category
     }
 
+    async findDefaultById(id: string) {
+        return await this.categoryRepository.findOne({
+            relations: {incomes: true},
+            where: {
+                id,
+                isDefault: true,
+                user: null
+            }
+        })
+    }
+
     async createDefault(data: CreateCategoryDto) {
         const defaultCategory = await this.findDefaultByName(data.name)
 
@@ -111,6 +122,18 @@ export class CategoryService {
         }
 
         const { affected } = await this.categoryRepository.delete(category.id)
+
+        return affected === 1
+    }
+
+    async deleteDefault(id: string) {
+        const defaultCategory = await this.findDefaultById(id)
+
+        if (!defaultCategory) {
+            throw new NotFoundException()
+        }
+
+        const { affected } = await this.categoryRepository.delete(defaultCategory.id)
 
         return affected === 1
     }
