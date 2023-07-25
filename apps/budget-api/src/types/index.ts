@@ -21,3 +21,8 @@ export type TransactionIdentificationData = {
     transactionId: string
     user: UserIdentificationData
 }
+
+export type CustomCategoryIdentificationData = {
+    categoryId: string
+    userId: string
+}

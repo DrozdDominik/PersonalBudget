@@ -1,12 +1,13 @@
-import { Body, Controller, Post, UseGuards, Delete, Param } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Delete, Param, Patch } from '@nestjs/common';
 import { CategoryService } from "./category.service";
 import { AuthGuard } from "@nestjs/passport";
 import { AdminGuard } from "../guards/AdminGuard";
-import { CreateCategoryDto } from "./dtos/create-category.dto";
+import { CategoryNameDto } from "./dtos/category-name.dto";
 import { Serialize } from "../interceptors/serialize.interceptor";
 import { CategoryResponse, DefaultCategoryResponse } from "./dtos/category-response";
 import { CurrentUser } from "../decorators/current-user.decorator";
 import { User } from "../user/user.entity";
+import { CustomCategoryIdentificationData } from "../types";
 
 @Controller('category')
 export class CategoryController {
@@ -15,7 +16,7 @@ export class CategoryController {
     @UseGuards(AuthGuard('jwt'), AdminGuard)
     @Serialize(DefaultCategoryResponse)
     @Post('/default')
-    addDefault(@Body() newCategory: CreateCategoryDto) {
+    addDefault(@Body() newCategory: CategoryNameDto) {
         return this.categoryService.createDefault(newCategory)
     }
 
@@ -28,7 +29,7 @@ export class CategoryController {
     @UseGuards(AuthGuard('jwt'))
     @Serialize(CategoryResponse)
     @Post('/')
-    add(@Body() newCategory: CreateCategoryDto, @CurrentUser() user: User) {
+    add(@Body() newCategory: CategoryNameDto, @CurrentUser() user: User) {
         return this.categoryService.create(newCategory, user)
     }
 
@@ -36,5 +37,17 @@ export class CategoryController {
     @Delete('/:id')
     delete(@Param('id') id: string, @CurrentUser() user: User) {
         return this.categoryService.delete(id, user.id)
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Serialize(CategoryResponse)
+    @Patch('/:id')
+    edit(@Param('id') id: string, @Body() newCategory: CategoryNameDto, @CurrentUser() user: User) {
+        const categoryIdentificationData: CustomCategoryIdentificationData = {
+            categoryId: id,
+            userId: user.id
+        }
+
+        return this.categoryService.edit(categoryIdentificationData, newCategory.name)
     }
 }

@@ -2,9 +2,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from "@nestjs/typeorm";
 import { Category } from "./category.entity";
 import { Repository } from "typeorm";
-import { CreateCategoryDto } from "./dtos/create-category.dto";
+import { CategoryNameDto } from "./dtos/category-name.dto";
 import { CategoryCreateData } from "./types";
 import { User } from "../user/user.entity";
+import { CustomCategoryIdentificationData } from "../types";
 
 @Injectable()
 export class CategoryService {
@@ -35,7 +36,10 @@ export class CategoryService {
 
     async findCustomById(id: string, userId: string) {
         return await this.categoryRepository.findOne({
-            relations: {incomes: true},
+            relations: {
+                incomes: true,
+                user: true,
+            },
             where: {
                 id,
                 isDefault: false,
@@ -73,7 +77,7 @@ export class CategoryService {
         })
     }
 
-    async createDefault(data: CreateCategoryDto) {
+    async createDefault(data: CategoryNameDto) {
         const defaultCategory = await this.findDefaultByName(data.name)
 
         if (defaultCategory) {
@@ -90,7 +94,7 @@ export class CategoryService {
         return this.categoryRepository.save(newDefaultCategory)
     }
 
-    async create(data: CreateCategoryDto, user: User) {
+    async create(data: CategoryNameDto, user: User) {
         const defaultCategory = await this.findDefaultByName(data.name)
 
         if (defaultCategory) {
@@ -136,5 +140,19 @@ export class CategoryService {
         const { affected } = await this.categoryRepository.delete(defaultCategory.id)
 
         return affected === 1
+    }
+
+    async edit(identificationData: CustomCategoryIdentificationData, name: string) {
+        const {categoryId, userId} = identificationData
+
+        const category = await this.findCustomById(categoryId,userId)
+
+        if (!category) {
+            throw new NotFoundException()
+        }
+
+        category.name = name
+
+        return await this.categoryRepository.save(category)
     }
 }
