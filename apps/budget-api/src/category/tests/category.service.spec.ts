@@ -5,16 +5,19 @@ import { CategoryController } from "../category.controller";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Category } from "../category.entity";
 import { Repository } from "typeorm";
-import {CreateCategoryDto} from "../dtos/create-category.dto";
-import {faker} from "@faker-js/faker";
-import {CategoryCreateData} from "../types";
-import {BadRequestException} from "@nestjs/common";
+import { CategoryNameDto } from "../dtos/category-name.dto";
+import { faker } from "@faker-js/faker";
+import { CategoryCreateData } from "../types";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { User} from "../../user/user.entity";
+import { UserRole } from "../../user/types";
+import { CustomCategoryIdentificationData } from "../../types";
 
 describe('CategoryService', () => {
   let service: CategoryService;
   let repo: Repository<Category>
 
-  const testData: CreateCategoryDto = {
+  const testData: CategoryNameDto = {
     name: faker.word.noun()
   }
 
@@ -24,6 +27,37 @@ describe('CategoryService', () => {
     isDefault: true,
     user: null,
     incomes: []
+  }
+
+  const firstUser: User = {
+    id: faker.string.uuid(),
+    name: faker.internet.userName(),
+    email: faker.internet.email(),
+    passwordHash: faker.internet.password(),
+    currentToken: null,
+    role: UserRole.User,
+    incomes: [],
+    categories: [],
+  }
+
+  const testCategory: Category = {
+    id: faker.string.uuid(),
+    name: faker.word.noun(),
+    isDefault: false,
+    user: firstUser,
+    incomes: []
+  }
+
+  const testCategoryIdentificationData: CustomCategoryIdentificationData = {
+    categoryId: testCategory.id,
+    userId: firstUser.id
+  }
+
+  const newCategoryName = faker.word.noun()
+
+  const editedCategory = {
+    ...testCategory,
+    name: newCategoryName,
   }
 
   beforeEach(async () => {
@@ -37,6 +71,7 @@ describe('CategoryService', () => {
             create: vi.fn(),
             save: vi.fn(),
             findOne: vi.fn(),
+            delete: vi.fn(),
           },
         }
       ],
@@ -70,6 +105,78 @@ describe('CategoryService', () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testDefaultCategory)
 
       await expect(service.createDefault(testData)).rejects.toThrowError(BadRequestException)
+    })
+  })
+
+  describe('Create method', () => {
+    it('should call categoryRepository.create method with correct data', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValue(null)
+
+      const dataToSave: CategoryCreateData = {
+        name: testData.name,
+        isDefault: false,
+        user: firstUser
+      }
+
+      await service.create(testData, firstUser)
+
+      expect(repo.create).toHaveBeenCalledWith(dataToSave)
+    })
+
+    it('should throw error if same default category already exists', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(testCategory)
+
+      await expect(service.create(testData, firstUser)).rejects.toThrowError(BadRequestException)
+    })
+  })
+
+  describe('Delete method', () => {
+    it('should call categoryRepository.delete method with correct category id', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValue(testCategory)
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+
+      await service.delete(testCategory.id, firstUser.id)
+
+      expect(repo.delete).toHaveBeenCalledWith(testCategory.id)
+    })
+
+    it('should throw error if there is no such category', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
+
+      await expect(service.delete(testCategory.id, firstUser.id)).rejects.toThrowError(NotFoundException)
+    })
+  })
+
+  describe('Delete default method', () => {
+    it('should call categoryRepository.delete method with correct category id', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValue(testDefaultCategory)
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+
+      await service.deleteDefault(testDefaultCategory.id)
+
+      expect(repo.delete).toHaveBeenCalledWith(testDefaultCategory.id)
+    })
+
+    it('should throw error if there is no such category', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
+
+      await expect(service.deleteDefault(testDefaultCategory.id)).rejects.toThrowError(NotFoundException)
+    })
+  })
+
+  describe('Edit method', () => {
+    it('should call categoryRepository.save method correctly edited name', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValue(testCategory)
+
+      await service.edit(testCategoryIdentificationData, newCategoryName)
+
+      expect(repo.save).toHaveBeenCalledWith(editedCategory)
+    })
+
+    it('should throw error if there is no such category', async () => {
+      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
+
+      await expect(service.edit(testCategoryIdentificationData, newCategoryName)).rejects.toThrowError(NotFoundException)
     })
   })
 });
