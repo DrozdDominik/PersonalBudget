@@ -21,7 +21,7 @@ export class CategoryController {
     }
 
     @UseGuards(AuthGuard('jwt'), AdminGuard)
-    @Delete('/default')
+    @Delete('/default/:id')
     deleteDefault(@Param('id') id: string) {
         return this.categoryService.deleteDefault(id)
     }
