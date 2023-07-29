@@ -23,7 +23,7 @@ export class CategoryService {
         })
     }
 
-    async findByUserAndName(name: string, userId: string):Promise<Category | null> {
+    async findCustomByUserAndName(name: string, userId: string):Promise<Category | null> {
         return await this.categoryRepository.findOne({
             where: {
                 name: name.toLowerCase(),
@@ -57,7 +57,7 @@ export class CategoryService {
             return defaultCategory
         }
 
-        const category = await this.findByUserAndName(name,userId)
+        const category = await this.findCustomByUserAndName(name,userId)
 
         if (!category) {
             throw  new NotFoundException()
@@ -101,7 +101,7 @@ export class CategoryService {
             throw new BadRequestException()
         }
 
-        const category = await this.findByUserAndName(data.name, user.id)
+        const category = await this.findCustomByUserAndName(data.name, user.id)
 
         if (category) {
             throw new BadRequestException()
@@ -149,6 +149,12 @@ export class CategoryService {
 
         if (!category) {
             throw new NotFoundException()
+        }
+
+        const exitsUserCategory = await this.findCustomByUserAndName(name, userId)
+
+        if (exitsUserCategory) {
+            throw new BadRequestException(`User category ${name} already exits`)
         }
 
         category.name = name
