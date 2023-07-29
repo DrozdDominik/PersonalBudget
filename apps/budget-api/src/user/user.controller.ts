@@ -12,7 +12,7 @@ export class UserController {
     ) {}
 
     @Serialize(RegisterResponseDto)
-    @Post('/register')
+    @Post('/')
     createUser(@Body() newUser: RegisterUserDto): Promise<User> {
         return this.usersService.register(newUser);
     }
