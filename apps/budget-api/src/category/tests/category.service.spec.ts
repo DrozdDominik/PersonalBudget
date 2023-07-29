@@ -48,6 +48,14 @@ describe('CategoryService', () => {
     incomes: []
   }
 
+  const secondCategory: Category = {
+    id: faker.string.uuid(),
+    name: faker.word.noun(),
+    isDefault: false,
+    user: firstUser,
+    incomes: []
+  }
+
   const testCategoryIdentificationData: CustomCategoryIdentificationData = {
     categoryId: firstCategory.id,
     userId: firstUser.id
@@ -129,6 +137,13 @@ describe('CategoryService', () => {
 
       await expect(service.create(testData, firstUser)).rejects.toThrowError(BadRequestException)
     })
+
+    it('should throw error if same user category already exists', async () => {
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(firstCategory)
+
+      await expect(service.create(testData, firstUser)).rejects.toThrowError(BadRequestException)
+    })
   })
 
   describe('Delete method', () => {
@@ -178,6 +193,13 @@ describe('CategoryService', () => {
       vi.spyOn(service, 'findCustomById').mockResolvedValueOnce(null)
 
       await expect(service.edit(testCategoryIdentificationData, newCategoryName)).rejects.toThrowError(NotFoundException)
+    })
+
+    it('should throw error if this user category with same name already exists', async () => {
+      vi.spyOn(service, 'findCustomById').mockResolvedValueOnce(firstCategory)
+      vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(secondCategory)
+
+      await expect(service.edit(testCategoryIdentificationData, newCategoryName)).rejects.toThrowError(BadRequestException)
     })
   })
 });
