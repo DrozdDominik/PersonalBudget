@@ -21,7 +21,15 @@ describe('CategoryService', () => {
     name: faker.word.noun()
   }
 
-  const testDefaultCategory: Category = {
+  const firstDefaultCategory: Category = {
+    id: faker.string.uuid(),
+    name: faker.word.noun(),
+    isDefault: true,
+    user: null,
+    incomes: []
+  }
+
+  const secondDefaultCategory: Category = {
     id: faker.string.uuid(),
     name: faker.word.noun(),
     isDefault: true,
@@ -68,6 +76,11 @@ describe('CategoryService', () => {
     name: newCategoryName,
   }
 
+  const editedDefaultCategory = {
+    ...firstDefaultCategory,
+    name: newCategoryName,
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CategoryController],
@@ -110,7 +123,7 @@ describe('CategoryService', () => {
     })
 
     it('should throw error if category already exists', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(testDefaultCategory)
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(firstDefaultCategory)
 
       await expect(service.createDefault(testData)).rejects.toThrowError(BadRequestException)
     })
@@ -133,7 +146,7 @@ describe('CategoryService', () => {
     })
 
     it('should throw error if same default category already exists', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(testDefaultCategory)
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(firstDefaultCategory)
 
       await expect(service.create(testData, firstUser)).rejects.toThrowError(BadRequestException)
     })
@@ -165,24 +178,25 @@ describe('CategoryService', () => {
 
   describe('Delete default method', () => {
     it('should call categoryRepository.delete method with correct category id', async () => {
-      vi.spyOn(service, 'findDefaultById').mockResolvedValue(testDefaultCategory)
+      vi.spyOn(service, 'findDefaultById').mockResolvedValue(firstDefaultCategory)
       vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
 
-      await service.deleteDefault(testDefaultCategory.id)
+      await service.deleteDefault(firstDefaultCategory.id)
 
-      expect(repo.delete).toHaveBeenCalledWith(testDefaultCategory.id)
+      expect(repo.delete).toHaveBeenCalledWith(firstDefaultCategory.id)
     })
 
     it('should throw error if there is no such category', async () => {
       vi.spyOn(service, 'findDefaultById').mockResolvedValueOnce(null)
 
-      await expect(service.deleteDefault(testDefaultCategory.id)).rejects.toThrowError(NotFoundException)
+      await expect(service.deleteDefault(firstDefaultCategory.id)).rejects.toThrowError(NotFoundException)
     })
   })
 
   describe('Edit method', () => {
     it('should call categoryRepository.save method correctly edited name', async () => {
       vi.spyOn(service, 'findCustomById').mockResolvedValueOnce(firstCategory)
+      vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(null)
 
       await service.edit(testCategoryIdentificationData, newCategoryName)
 
@@ -200,6 +214,30 @@ describe('CategoryService', () => {
       vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(secondCategory)
 
       await expect(service.edit(testCategoryIdentificationData, newCategoryName)).rejects.toThrowError(BadRequestException)
+    })
+  })
+
+  describe('Edit default method', () => {
+    it('should call categoryRepository.save method correctly edited name', async () => {
+      vi.spyOn(service, 'findDefaultById').mockResolvedValueOnce(firstDefaultCategory)
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+
+      await service.editDefault(firstDefaultCategory.id, newCategoryName)
+
+      expect(repo.save).toHaveBeenCalledWith(editedDefaultCategory)
+    })
+
+    it('should throw error if there is no such default category', async () => {
+      vi.spyOn(service, 'findDefaultById').mockResolvedValueOnce(null)
+
+      await expect(service.editDefault(firstDefaultCategory.id, newCategoryName)).rejects.toThrowError(NotFoundException)
+    })
+
+    it('should throw error if default category with same name already exists', async () => {
+      vi.spyOn(service, 'findDefaultById').mockResolvedValueOnce(firstDefaultCategory)
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(secondDefaultCategory)
+
+      await expect(service.editDefault(firstDefaultCategory.id, newCategoryName)).rejects.toThrowError(BadRequestException)
     })
   })
 });
