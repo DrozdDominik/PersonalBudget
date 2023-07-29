@@ -161,4 +161,22 @@ export class CategoryService {
 
         return await this.categoryRepository.save(category)
     }
+
+    async editDefault(id: string, name: string) {
+        const defaultCategory = await this.findDefaultById(id)
+
+        if (!defaultCategory) {
+            throw new NotFoundException()
+        }
+
+        const exitsDefaultCategory = await this.findDefaultByName(name)
+
+        if (exitsDefaultCategory) {
+            throw new BadRequestException(`Default category ${name} already exits`)
+        }
+
+        defaultCategory.name = name
+
+        return await this.categoryRepository.save(defaultCategory)
+    }
 }

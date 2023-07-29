@@ -26,6 +26,13 @@ export class CategoryController {
         return this.categoryService.deleteDefault(id)
     }
 
+    @UseGuards(AuthGuard('jwt'), AdminGuard)
+    @Serialize(CategoryResponse)
+    @Patch('/default/:id')
+    editDefault(@Param('id') id: string, @Body() newCategory: CategoryNameDto) {
+        return this.categoryService.editDefault(id, newCategory.name)
+    }
+
     @UseGuards(AuthGuard('jwt'))
     @Serialize(CategoryResponse)
     @Post('/')
