@@ -273,4 +273,54 @@ describe('UsersService', () => {
       expect(repo.delete).toHaveBeenCalledWith(user.id)
     })
   })
+
+  describe('Get method', () => {
+    it('should throw error if there is no user with provided id', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: user.id,
+        role: UserRole.User,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(null)
+
+      await expect(service.get(user.id, loggedUserData)).rejects.toThrowError(NotFoundException)
+    })
+
+    it('should throw error if provided user id and current not admin logged user id are different', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: faker.string.uuid(),
+        role: UserRole.User,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
+
+      await expect(service.get(user.id, loggedUserData)).rejects.toThrowError(ForbiddenException)
+    })
+
+    it('should return user', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: user.id,
+        role: UserRole.User,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
+
+      const result = await service.get(user.id, loggedUserData)
+
+      expect(result).toEqual(user)
+    })
+
+    it('should return another user if user is admin', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: faker.string.uuid(),
+        role: UserRole.Admin,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
+
+      const result = await service.get(user.id, loggedUserData)
+
+      expect(result).toEqual(user)
+    })
+  })
 });
