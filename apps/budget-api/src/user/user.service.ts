@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from "typeorm";
 import { User } from "./user.entity";
-import { NewUserData } from "./types";
+import { NewUserData, UserIdentificationData, UserRole } from "./types";
 import { InjectRepository } from "@nestjs/typeorm";
 import { RegisterUserDto } from "./dtos/register-user.dto";
 import { hashPassword } from "../utils";
+import { EditUserDto } from "./dtos/edit-user.dto";
 
 @Injectable()
 export class UserService {
@@ -27,17 +28,6 @@ export class UserService {
         return this.usersRepository.findOne({where: {email}})
     }
 
-    async update(id: string, data: Partial<User>): Promise<User> {
-        const user = await this.findOneById(id)
-
-        if (!user) {
-            throw new NotFoundException('user not found');
-        }
-
-        Object.assign(user, data)
-        return this.usersRepository.save(user)
-    }
-
     async findAll(): Promise<User[]> {
         return this.usersRepository.find()
     }
@@ -58,5 +48,47 @@ export class UserService {
         }
 
         return await this.create(newUserData)
+    }
+
+    async edit(id: string, userData: UserIdentificationData, editedData: EditUserDto) {
+        const user = await this.findOneById(id)
+
+        if (!user) {
+            throw new NotFoundException()
+        }
+
+        if (user.id !== userData.id && userData.role !== UserRole.Admin) {
+            throw new ForbiddenException()
+        }
+
+        if (!!editedData.email) {
+            const user = await this.findOneByEmail(editedData.email)
+
+            if (!!user) {
+                throw new BadRequestException('email is use')
+            }
+        }
+
+        let passwordHash: string | null = null
+
+        if (!!editedData.password) {
+            passwordHash = await hashPassword(editedData.password)
+        }
+
+        const { password, ...data } = editedData
+
+        const editedDataToSave = passwordHash
+            ?
+                {
+                    passwordHash,
+                    ...data
+                }
+            :
+                editedData
+
+
+        Object.assign(user, editedDataToSave)
+
+        return this.usersRepository.save(user)
     }
 }
