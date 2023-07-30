@@ -40,7 +40,7 @@ describe('UsersService', () => {
           useValue: {
             create: vi.fn(),
             save: vi.fn(),
-            findOne: vi.fn()
+            delete: vi.fn(),
           }
         },
       ],
@@ -219,6 +219,58 @@ describe('UsersService', () => {
       await service.edit(user.id, loggedUserData, editedData)
 
       expect(repo.save).toHaveBeenCalledWith(editedUser)
+    })
+  })
+
+  describe('Delete method', () => {
+    it('should throw error if there is no user with provided id', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: user.id,
+        role: UserRole.User,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(null)
+
+      await expect(service.delete(user.id, loggedUserData)).rejects.toThrowError(NotFoundException)
+    })
+
+    it('should throw error if provided user id and current not admin logged user id are different', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: faker.string.uuid(),
+        role: UserRole.User,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
+
+      await expect(service.delete(user.id, loggedUserData)).rejects.toThrowError(ForbiddenException)
+    })
+
+    it('should call usersRepository.delete method with correct id', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: user.id,
+        role: UserRole.User,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+
+      await service.delete(user.id, loggedUserData)
+
+      expect(repo.delete).toHaveBeenCalledWith(user.id)
+    })
+
+    it('should delete another user by admin', async () => {
+      const loggedUserData: UserIdentificationData = {
+        id: faker.string.uuid(),
+        role: UserRole.Admin,
+      }
+
+      vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+
+      await service.delete(user.id, loggedUserData)
+
+      expect(repo.delete).toHaveBeenCalledWith(user.id)
     })
   })
 });
