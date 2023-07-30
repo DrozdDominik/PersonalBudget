@@ -23,6 +23,7 @@ describe('UsersService', () => {
     currentToken: null,
     role: UserRole.User,
     incomes: [],
+    categories: [],
   };
 
   const registerData: RegisterUserDto = {
