@@ -91,4 +91,20 @@ export class UserService {
 
         return this.usersRepository.save(user)
     }
+
+    async delete(id: string, userData: UserIdentificationData) {
+        const user = await this.findOneById(id)
+
+        if (!user) {
+            throw new NotFoundException()
+        }
+
+        if (user.id !== userData.id && userData.role !== UserRole.Admin) {
+            throw new ForbiddenException()
+        }
+
+        const {affected} = await this.usersRepository.delete(user.id)
+
+        return affected === 1
+    }
 }
