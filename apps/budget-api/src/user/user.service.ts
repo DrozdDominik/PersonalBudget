@@ -107,4 +107,18 @@ export class UserService {
 
         return affected === 1
     }
+
+    async get(id: string, userData: UserIdentificationData) {
+        const user = await this.findOneById(id)
+
+        if (!user) {
+            throw new NotFoundException()
+        }
+
+        if (user.id !== userData.id && userData.role !== UserRole.Admin) {
+            throw new ForbiddenException()
+        }
+
+        return user
+    }
 }
