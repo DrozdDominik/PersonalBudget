@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoryService } from '../category.service';
-import {describe, beforeEach, it, expect, vi} from 'vitest'
+import { describe, beforeEach, it, expect, vi } from 'vitest'
 import { CategoryController } from "../category.controller";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Category } from "../category.entity";
