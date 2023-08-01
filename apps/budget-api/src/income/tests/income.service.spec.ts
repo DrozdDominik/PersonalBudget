@@ -45,13 +45,13 @@ describe('IncomeService', () => {
   const [firstUserIncome] = incomeFactory(1, firstUser.id)
 
   const editedData: Partial<CreateIncomeDto> = {
-    categoryName: faker.word.noun(),
+    categoryId: faker.string.uuid(),
     amount: Number(faker.finance.amount(0, 1000000, 2))
   }
 
   const editedCategory: Category = {
     id: faker.string.uuid(),
-    name: editedData.categoryName,
+    name: faker.word.noun(),
     isDefault: false,
     user: firstUser,
     incomes: [],
@@ -102,7 +102,7 @@ describe('IncomeService', () => {
   }
 
   const incomeData: CreateIncomeDto = {
-    categoryName: faker.word.noun(),
+    categoryId: faker.string.uuid(),
     amount: Number(faker.finance.amount(0, 1000000, 2)),
     date: faker.date.anytime({refDate: '18-06-2023'}),
   }
@@ -147,7 +147,7 @@ describe('IncomeService', () => {
   describe('Edit method', () => {
     it('should call incomeRepository.save method with correctly edited data', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
-      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndName').mockResolvedValueOnce(editedCategory)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
 
       await service.edit(firstIncomeIdentificationData, editedData)
 
@@ -168,7 +168,7 @@ describe('IncomeService', () => {
 
     it('should not throw error if admin edit income belongs to another user', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
-      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndName').mockResolvedValueOnce(editedCategory)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
 
       await service.edit(adminIncomeIdentificationData, editedData)
 

@@ -1,10 +1,10 @@
-import { IsDateString, IsNumber, IsString, Min } from "class-validator";
+import { IsDateString, IsNumber, IsUUID, Min } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateIncomeDto {
     @ApiProperty()
-    @IsString()
-    categoryName: string;
+    @IsUUID()
+    categoryId: string;
 
     @ApiProperty()
     @IsNumber({

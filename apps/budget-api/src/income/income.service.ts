@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Income } from "./income.entity";
 import { Repository } from "typeorm";
@@ -17,9 +17,13 @@ export class IncomeService {
     ) {}
 
     async create(data: CreateIncomeDto, user: User): Promise<Income> {
-        const { categoryName, ...incomeData} = data
+        const { categoryId, ...incomeData} = data
 
-        const category = await this.categoryService.findDefaultOrCustomByUserAndName(categoryName, user.id)
+        const category = await this.categoryService.findDefaultOrCustomByUserAndId(categoryId, user.id)
+
+        if (!category) {
+            throw new BadRequestException()
+        }
 
         const income = this.incomeRepository.create(incomeData)
 
@@ -37,15 +41,19 @@ export class IncomeService {
 
         const income = await this.getOne(transactionId, user)
 
-        const { categoryName, ...dataToEdit } = editedData
+        const { categoryId, ...dataToEdit } = editedData
 
         Object.assign(income, dataToEdit)
 
-        if (!!categoryName) {
-             const category = await this.categoryService.findDefaultOrCustomByUserAndName(
-                categoryName,
+        if (!!categoryId) {
+             const category = await this.categoryService.findDefaultOrCustomByUserAndId(
+                categoryId,
                 user.id
             )
+
+            if (!category) {
+                throw new BadRequestException()
+            }
 
             Object.assign(income.category, category)
         }

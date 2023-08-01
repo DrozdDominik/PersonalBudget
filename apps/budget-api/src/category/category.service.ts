@@ -50,14 +50,14 @@ export class CategoryService {
         })
     }
 
-    async findDefaultOrCustomByUserAndName(name: string, userId: string): Promise<Category> {
-        const defaultCategory = await this.findDefaultByName(name)
+    async findDefaultOrCustomByUserAndId(id: string, userId: string): Promise<Category> {
+        const defaultCategory = await this.findDefaultById(id)
 
         if (defaultCategory) {
             return defaultCategory
         }
 
-        const category = await this.findCustomByUserAndName(name,userId)
+        const category = await this.findCustomById(id, userId)
 
         if (!category) {
             throw  new NotFoundException()
