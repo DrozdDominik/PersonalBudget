@@ -25,3 +25,11 @@ export class CategoryResponse {
     @Expose()
     userId: string
 }
+
+export class GetCategoriesResponse {
+    @Expose()
+    id: string
+
+    @Expose()
+    name: string
+}

@@ -179,4 +179,33 @@ export class CategoryService {
 
         return await this.categoryRepository.save(defaultCategory)
     }
+
+    async getAll(userId: string): Promise<Category[]> {
+        return await this.categoryRepository.find({
+            relations: {user: true},
+            where: {
+                user: {
+                    id: userId
+                }
+            }
+        })
+    }
+
+    async getAllDefault() {
+        return await this.categoryRepository.find({
+            where: {
+                isDefault: true
+            }
+        })
+    }
+
+    async getAllAvailable(userId: string) {
+        return await this.categoryRepository.find({
+            relations: {user: true},
+            where: [
+                {isDefault: true},
+                {user: {id: userId}}
+            ]
+        })
+    }
 }
