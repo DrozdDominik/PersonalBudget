@@ -9,7 +9,7 @@ import { faker } from "@faker-js/faker";
 import { User } from "../../user/user.entity";
 import { UserIdentificationData, UserRole } from "../../user/types";
 import { TransactionIdentificationData } from "../../types";
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { incomeFactory } from "./utils";
 import { Category } from "../../category/category.entity";
 import { CategoryService } from "../../category/category.service";
@@ -160,6 +160,13 @@ describe('IncomeService', () => {
       await expect( service.edit(firstIncomeIdentificationData, editedData) ).rejects.toThrowError(NotFoundException)
     })
 
+    it('should throw error if edited category not exists', async () => {
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
+
+      await expect( service.edit(firstIncomeIdentificationData, editedData) ).rejects.toThrowError(BadRequestException)
+    })
+
     it('should throw error if income belongs to another user', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
 
@@ -199,6 +206,12 @@ describe('IncomeService', () => {
       await service.create(incomeData, firstUser)
 
       expect(repo.save).toHaveBeenCalledWith(incomeToSave)
+    })
+
+    it('should throw error if category not exists', async () => {
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
+
+      await expect(service.create(incomeData, firstUser)).rejects.toThrowError(BadRequestException)
     })
   })
 
