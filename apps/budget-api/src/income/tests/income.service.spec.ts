@@ -146,7 +146,7 @@ describe('IncomeService', () => {
 
   describe('Edit method', () => {
     it('should call incomeRepository.save method with correctly edited data', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
 
       await service.edit(firstIncomeIdentificationData, editedData)
@@ -167,7 +167,7 @@ describe('IncomeService', () => {
     })
 
     it('should not throw error if admin edit income belongs to another user', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
 
       await service.edit(adminIncomeIdentificationData, editedData)
@@ -194,7 +194,7 @@ describe('IncomeService', () => {
       }
 
       vi.spyOn(repo, 'create').mockReturnValueOnce(createdIncome)
-      vi.spyOn(categoryRepo, 'findOne').mockResolvedValueOnce(category)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(category)
 
       await service.create(incomeData, firstUser)
 
@@ -204,7 +204,7 @@ describe('IncomeService', () => {
 
   describe('Delete method', () => {
     it('should call incomeRepository.delete method with correct income id', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
       vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
 
       await service.delete(firstUserIncome.id, firstUserIdentificationData)
@@ -228,7 +228,7 @@ describe('IncomeService', () => {
     })
 
     it('should not throw error if admin delete income belongs to another user', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
       vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
 
       await service.delete(firstUserIncome.id, adminIdentificationData)
