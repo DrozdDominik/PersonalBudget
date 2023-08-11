@@ -1,4 +1,11 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+    BadRequestException,
+    ForbiddenException,
+    forwardRef,
+    Inject,
+    Injectable,
+    NotFoundException
+} from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Income } from "./income.entity";
 import { Repository } from "typeorm";
@@ -13,7 +20,7 @@ export class IncomeService {
     constructor(
         @InjectRepository(Income)
         private incomeRepository: Repository<Income>,
-        @Inject(CategoryService) private categoryService: CategoryService,
+        @Inject(forwardRef( () => CategoryService) ) private categoryService: CategoryService,
     ) {}
 
     async create(data: CreateIncomeDto, user: User): Promise<Income> {
@@ -111,5 +118,26 @@ export class IncomeService {
                    }
                }
            })
+   }
+
+   async getAllByCategory(categoryId: string, userId: string): Promise<Income[]> {
+        return await this.incomeRepository.find({
+            relations: {
+                user: true,
+                category: true
+            },
+            where: {
+                user: {
+                    id: userId
+                },
+                category: {
+                    id: categoryId
+                }
+            }
+        })
+   }
+
+   async save(income: Income): Promise<Income> {
+        return await this.incomeRepository.save(income)
    }
 }

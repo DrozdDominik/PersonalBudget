@@ -11,6 +11,7 @@ import { CategoryModule } from "../category/category.module";
       forwardRef(() => CategoryModule),
   ],
   controllers: [IncomeController],
-  providers: [IncomeService]
+  providers: [IncomeService],
+  exports: [IncomeService]
 })
 export class IncomeModule {}

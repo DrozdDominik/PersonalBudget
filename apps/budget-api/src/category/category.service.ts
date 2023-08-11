@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Category } from "./category.entity";
 import { Repository } from "typeorm";
@@ -6,12 +6,14 @@ import { CategoryNameDto } from "./dtos/category-name.dto";
 import { CategoryCreateData } from "./types";
 import { User } from "../user/user.entity";
 import { CustomCategoryIdentificationData } from "../types";
+import { IncomeService } from "../income/income.service";
 
 @Injectable()
 export class CategoryService {
     constructor(
         @InjectRepository(Category)
-        private categoryRepository: Repository<Category>
+        private categoryRepository: Repository<Category>,
+        @Inject(forwardRef( () => IncomeService)) private incomeService: IncomeService,
     ) {}
 
     async findDefaultByName(name: string): Promise<Category | null> {
@@ -91,7 +93,33 @@ export class CategoryService {
         }
 
         const newDefaultCategory = this.categoryRepository.create(newCategoryData)
-        return this.categoryRepository.save(newDefaultCategory)
+        const savedNewDefaultCategory = await this.categoryRepository.save(newDefaultCategory)
+
+        const customCategories = await this.getAllCustomByName(savedNewDefaultCategory.name)
+
+        if (customCategories.length > 0) {
+            customCategories.map(async category => {
+                const incomes = await this.incomeService.getAllByCategory(category.id, category.user.id)
+                await Promise.all(incomes.map( income => {
+                    income.category.id = savedNewDefaultCategory.id
+                    return this.incomeService.save(income)
+                } ) )
+            })
+
+            const deleteResult = await Promise.all(customCategories.map(
+                async category => {
+                    return this.delete(category.id, category.user.id)
+                }
+            ))
+
+            const isAllDeleted = deleteResult.filter(result => !result).length === 0
+
+            if (!isAllDeleted) {
+                throw new Error('Deleting categories went wrong...')
+            }
+        }
+
+        return savedNewDefaultCategory
     }
 
     async create(data: CategoryNameDto, user: User) {
@@ -191,7 +219,7 @@ export class CategoryService {
         })
     }
 
-    async getAllDefault() {
+    async getAllDefault(): Promise<Category[]> {
         return await this.categoryRepository.find({
             where: {
                 isDefault: true
@@ -199,13 +227,23 @@ export class CategoryService {
         })
     }
 
-    async getAllAvailable(userId: string) {
+    async getAllAvailable(userId: string): Promise<Category[]> {
         return await this.categoryRepository.find({
             relations: {user: true},
             where: [
                 {isDefault: true},
                 {user: {id: userId}}
             ]
+        })
+    }
+
+    async getAllCustomByName(name: string): Promise<Category[]> {
+        return await this.categoryRepository.find({
+            relations: {user: true},
+            where: {
+                name,
+                isDefault: false,
+            }
         })
     }
 }
