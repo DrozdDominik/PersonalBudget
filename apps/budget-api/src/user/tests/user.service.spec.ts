@@ -140,6 +140,7 @@ describe('UsersService', () => {
         currentToken: null,
         role: UserRole.User,
         incomes: [],
+        categories: [],
       };
 
       vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
