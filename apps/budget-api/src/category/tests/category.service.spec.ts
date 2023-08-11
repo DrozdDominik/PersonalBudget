@@ -12,10 +12,15 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { User} from "../../user/user.entity";
 import { UserRole } from "../../user/types";
 import { CustomCategoryIdentificationData } from "../../types";
+import { IncomeService } from "../../income/income.service";
+import { Income } from "../../income/income.entity";
+import { incomeFactory } from "../../income/tests/utils";
 
 describe('CategoryService', () => {
   let service: CategoryService;
   let repo: Repository<Category>
+  let incomeService: IncomeService;
+  let incomeRepo: Repository<Income>
 
   const testData: CategoryNameDto = {
     name: faker.word.noun()
@@ -86,6 +91,7 @@ describe('CategoryService', () => {
       controllers: [CategoryController],
       providers: [
           CategoryService,
+          IncomeService,
         {
           provide: getRepositoryToken(Category),
           useValue: {
@@ -94,13 +100,27 @@ describe('CategoryService', () => {
             findOne: vi.fn(),
             delete: vi.fn(),
           },
-        }
+        },
+        {
+          provide: getRepositoryToken(Income),
+          useValue: {
+            create: vi.fn(),
+            save: vi.fn(),
+            findOne: vi.fn(),
+            delete: vi.fn(),
+            find: vi.fn(),
+          }
+        },
       ],
     }).compile();
 
     service = module.get<CategoryService>(CategoryService);
 
     repo = module.get<Repository<Category>>(getRepositoryToken(Category))
+
+    incomeService = module.get<IncomeService>(IncomeService);
+
+    incomeRepo = module.get<Repository<Income>>(getRepositoryToken(Income));
   });
 
   it('should be defined', () => {
@@ -108,14 +128,22 @@ describe('CategoryService', () => {
   });
 
   describe('Create default method', () => {
+    const dataToSave: CategoryCreateData = {
+      name: testData.name,
+      isDefault: true,
+      user: null
+    }
+
+    const savedCategory: Category = {
+      ...dataToSave,
+      id: faker.string.uuid(),
+      incomes: [],
+    }
+
     it('should call categoryRepository.create method with correct data', async () => {
       vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
-
-      const dataToSave: CategoryCreateData = {
-        name: testData.name,
-        isDefault: true,
-        user: null
-      }
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
+      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([])
 
       await service.createDefault(testData)
 
@@ -126,6 +154,50 @@ describe('CategoryService', () => {
       vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(firstDefaultCategory)
 
       await expect(service.createDefault(testData)).rejects.toThrowError(BadRequestException)
+    })
+
+    it('should call this.delete method with correct data', async () => {
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
+      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory])
+      vi.spyOn(incomeService, 'getAllByCategory').mockResolvedValueOnce([])
+      vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
+
+      await service.createDefault(testData)
+
+      expect(service.delete).toHaveBeenCalledOnce()
+      expect(service.delete).toHaveBeenCalledWith(firstCategory.id, firstCategory.user.id)
+    })
+
+    it('should call this.delete method the same number as the number of custom categories found', async () => {
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
+      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory, secondCategory])
+      vi.spyOn(incomeService, 'getAllByCategory').mockResolvedValue([])
+      vi.spyOn(service, 'delete').mockResolvedValue(true)
+
+      await service.createDefault(testData)
+
+      expect(service.delete).toHaveBeenCalledTimes(2)
+    })
+
+    it('should call incomeService.save method with income with correct edited category id', async () => {
+      const incomesArr = incomeFactory(2, firstCategory.user.id)
+
+      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
+      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory])
+      vi.spyOn(incomeService, 'getAllByCategory').mockResolvedValueOnce(incomesArr)
+      vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
+      vi.spyOn(incomeService, 'save')
+
+      const lastIncome = incomesArr.at(-1)
+      lastIncome.category.id = savedCategory.id
+
+      await service.createDefault(testData)
+
+      expect(incomeService.save).toHaveBeenCalledTimes(2)
+      expect(incomeService.save).toHaveBeenLastCalledWith(lastIncome)
     })
   })
 
