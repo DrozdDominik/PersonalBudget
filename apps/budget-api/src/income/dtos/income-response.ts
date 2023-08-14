@@ -4,6 +4,7 @@ export class IncomeResponse {
     @Expose()
     id: string
 
+    @Transform(({ obj }) => obj.category.name)
     @Expose()
     name: string
 

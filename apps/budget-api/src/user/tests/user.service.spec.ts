@@ -23,6 +23,7 @@ describe('UsersService', () => {
     currentToken: null,
     role: UserRole.User,
     incomes: [],
+    categories: [],
   };
 
   const registerData: RegisterUserDto = {
@@ -139,6 +140,7 @@ describe('UsersService', () => {
         currentToken: null,
         role: UserRole.User,
         incomes: [],
+        categories: [],
       };
 
       vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)

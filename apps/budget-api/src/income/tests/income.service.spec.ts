@@ -9,12 +9,16 @@ import { faker } from "@faker-js/faker";
 import { User } from "../../user/user.entity";
 import { UserIdentificationData, UserRole } from "../../user/types";
 import { TransactionIdentificationData } from "../../types";
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { incomeFactory } from "./utils";
+import { Category } from "../../category/category.entity";
+import { CategoryService } from "../../category/category.service";
 
 describe('IncomeService', () => {
   let service: IncomeService;
   let repo: Repository<Income>
+  let categoryService: CategoryService
+  let categoryRepo: Repository<Category>
 
   const firstUser: User = {
     id: faker.string.uuid(),
@@ -24,6 +28,7 @@ describe('IncomeService', () => {
     currentToken: null,
     role: UserRole.User,
     incomes: [],
+    categories: [],
   }
 
   const admin: User = {
@@ -34,13 +39,22 @@ describe('IncomeService', () => {
     currentToken: null,
     role: UserRole.Admin,
     incomes: [],
+    categories: [],
   }
 
   const [firstUserIncome] = incomeFactory(1, firstUser.id)
 
   const editedData: Partial<CreateIncomeDto> = {
-    name: faker.word.noun(),
+    categoryId: faker.string.uuid(),
     amount: Number(faker.finance.amount(0, 1000000, 2))
+  }
+
+  const editedCategory: Category = {
+    id: faker.string.uuid(),
+    name: faker.word.noun(),
+    isDefault: false,
+    user: firstUser,
+    incomes: [],
   }
 
   const firstUserIdentificationData: UserIdentificationData = {
@@ -75,11 +89,20 @@ describe('IncomeService', () => {
 
   const editedIncome: Income = {
     ...firstUserIncome,
-    ...editedData
+    category: editedCategory,
+    amount: editedData.amount
+  }
+
+  const category: Category = {
+    id: faker.string.uuid(),
+    name: faker.word.noun(),
+    isDefault: false,
+    user: firstUser,
+    incomes: [],
   }
 
   const incomeData: CreateIncomeDto = {
-    name: faker.word.noun(),
+    categoryId: faker.string.uuid(),
     amount: Number(faker.finance.amount(0, 1000000, 2)),
     date: faker.date.anytime({refDate: '18-06-2023'}),
   }
@@ -88,6 +111,7 @@ describe('IncomeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
           IncomeService,
+          CategoryService,
         {
           provide: getRepositoryToken(Income),
           useValue: {
@@ -98,12 +122,22 @@ describe('IncomeService', () => {
             find: vi.fn(),
           }
         },
+        {
+          provide: getRepositoryToken(Category),
+          useValue: {
+            findOne: vi.fn(),
+          }
+        },
       ],
     }).compile();
 
     service = module.get<IncomeService>(IncomeService);
 
     repo = module.get<Repository<Income>>(getRepositoryToken(Income));
+
+    categoryService = module.get<CategoryService>(CategoryService)
+
+    categoryRepo = module.get<Repository<Category>>(getRepositoryToken(Category))
   });
 
   it('should be defined', () => {
@@ -112,7 +146,8 @@ describe('IncomeService', () => {
 
   describe('Edit method', () => {
     it('should call incomeRepository.save method with correctly edited data', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
 
       await service.edit(firstIncomeIdentificationData, editedData)
 
@@ -125,6 +160,13 @@ describe('IncomeService', () => {
       await expect( service.edit(firstIncomeIdentificationData, editedData) ).rejects.toThrowError(NotFoundException)
     })
 
+    it('should throw error if edited category not exists', async () => {
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
+
+      await expect( service.edit(firstIncomeIdentificationData, editedData) ).rejects.toThrowError(BadRequestException)
+    })
+
     it('should throw error if income belongs to another user', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
 
@@ -132,7 +174,8 @@ describe('IncomeService', () => {
     })
 
     it('should not throw error if admin edit income belongs to another user', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
 
       await service.edit(adminIncomeIdentificationData, editedData)
 
@@ -145,7 +188,9 @@ describe('IncomeService', () => {
   describe('Create method', () => {
     it('should call incomeRepository.save method with correct data', async () => {
       const createdIncome: Income = {
-        ...incomeData,
+        category,
+        amount: incomeData.amount,
+        date: incomeData.date,
         id: undefined,
         user: undefined
       }
@@ -156,16 +201,23 @@ describe('IncomeService', () => {
       }
 
       vi.spyOn(repo, 'create').mockReturnValueOnce(createdIncome)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(category)
 
       await service.create(incomeData, firstUser)
 
       expect(repo.save).toHaveBeenCalledWith(incomeToSave)
     })
+
+    it('should throw error if category not exists', async () => {
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
+
+      await expect(service.create(incomeData, firstUser)).rejects.toThrowError(BadRequestException)
+    })
   })
 
   describe('Delete method', () => {
     it('should call incomeRepository.delete method with correct income id', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
       vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
 
       await service.delete(firstUserIncome.id, firstUserIdentificationData)
@@ -189,7 +241,7 @@ describe('IncomeService', () => {
     })
 
     it('should not throw error if admin delete income belongs to another user', async () => {
-      vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserIncome)
       vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
 
       await service.delete(firstUserIncome.id, adminIdentificationData)
@@ -203,6 +255,7 @@ describe('IncomeService', () => {
   describe('Get one method', () => {
     it('should return income if provided correct data', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserIncome)
+      vi.spyOn(categoryRepo, 'findOne').mockResolvedValueOnce(category)
 
      const income = await service.getOne(firstUserIncome.id, firstUserIdentificationData)
 
@@ -235,7 +288,10 @@ describe('IncomeService', () => {
   describe('Get all method', () => {
     it('should call incomeRepository.find method with correct options when user is not admin', async () => {
       const optionsForUser = {
-        relations: {user: true},
+        relations: {
+          user: true,
+          category: true,
+        },
         where: {
           user: {
             id: firstUser.id
@@ -250,7 +306,10 @@ describe('IncomeService', () => {
 
     it('should call incomeRepository.find method with correct options when user is admin', async () => {
       const optionsForAdmin = {
-        relations: {user: true}
+        relations: {
+          user: true,
+          category: true,
+        }
       }
 
       await service.getAll(adminIdentificationData)

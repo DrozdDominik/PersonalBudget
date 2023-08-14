@@ -1,4 +1,11 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+    BadRequestException,
+    ForbiddenException,
+    forwardRef,
+    Inject,
+    Injectable,
+    NotFoundException
+} from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Income } from "./income.entity";
 import { Repository } from "typeorm";
@@ -6,17 +13,30 @@ import { CreateIncomeDto } from "./dtos/create-income.dto";
 import { User } from "../user/user.entity"
 import { TransactionIdentificationData } from "../types";
 import { UserIdentificationData, UserRole } from "../user/types";
+import { CategoryService } from "../category/category.service";
 
 @Injectable()
 export class IncomeService {
     constructor(
         @InjectRepository(Income)
-        private incomeRepository: Repository<Income>
+        private incomeRepository: Repository<Income>,
+        @Inject(forwardRef( () => CategoryService) ) private categoryService: CategoryService,
     ) {}
 
     async create(data: CreateIncomeDto, user: User): Promise<Income> {
-        const income = this.incomeRepository.create(data)
+        const { categoryId, ...incomeData} = data
+
+        const category = await this.categoryService.findDefaultOrCustomByUserAndId(categoryId, user.id)
+
+        if (!category) {
+            throw new BadRequestException()
+        }
+
+        const income = this.incomeRepository.create(incomeData)
+
         income.user = user
+        income.category = category
+
         return this.incomeRepository.save(income)
     }
 
@@ -28,7 +48,22 @@ export class IncomeService {
 
         const income = await this.getOne(transactionId, user)
 
-        Object.assign(income, editedData)
+        const { categoryId, ...dataToEdit } = editedData
+
+        Object.assign(income, dataToEdit)
+
+        if (!!categoryId) {
+             const category = await this.categoryService.findDefaultOrCustomByUserAndId(
+                categoryId,
+                user.id
+            )
+
+            if (!category) {
+                throw new BadRequestException()
+            }
+
+            Object.assign(income.category, category)
+        }
 
         return this.incomeRepository.save(income)
     }
@@ -44,7 +79,10 @@ export class IncomeService {
     async getOne(id: string, user: UserIdentificationData): Promise<Income> {
         const income = await this.incomeRepository.findOne(
             { where: {id},
-                relations: {user: true}
+                relations: {
+                user: true,
+                category: true,
+                }
             }
         )
 
@@ -63,16 +101,43 @@ export class IncomeService {
        return user.role === UserRole.Admin
            ?
            await this.incomeRepository.find({
-              relations: {user: true},
+              relations: {
+                  user: true,
+                  category: true,
+              },
           })
            :
            await this.incomeRepository.find({
-               relations: {user: true},
+               relations: {
+                   user: true,
+                   category: true
+               },
                where: {
                    user: {
                        id: user.id
                    }
                }
            })
+   }
+
+   async getAllByCategory(categoryId: string, userId: string): Promise<Income[]> {
+        return await this.incomeRepository.find({
+            relations: {
+                user: true,
+                category: true
+            },
+            where: {
+                user: {
+                    id: userId
+                },
+                category: {
+                    id: categoryId
+                }
+            }
+        })
+   }
+
+   async save(income: Income): Promise<Income> {
+        return await this.incomeRepository.save(income)
    }
 }
