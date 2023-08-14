@@ -10,6 +10,8 @@ export interface NewUserData {
 }
 
 export type UserIdentificationData = {
-    id: string
+    id: UserId
     role: UserRole
 }
+
+export type UserId = string & { __UserId__: void }
