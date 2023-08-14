@@ -12,7 +12,7 @@ import { Repository } from "typeorm";
 import { CreateIncomeDto } from "./dtos/create-income.dto";
 import { User } from "../user/user.entity"
 import { TransactionIdentificationData } from "../types";
-import { UserIdentificationData, UserRole } from "../user/types";
+import { UserId, UserIdentificationData, UserRole } from "../user/types";
 import { CategoryService } from "../category/category.service";
 
 @Injectable()
@@ -120,7 +120,7 @@ export class IncomeService {
            })
    }
 
-   async getAllByCategory(categoryId: string, userId: string): Promise<Income[]> {
+   async getAllByCategory(categoryId: string, userId: UserId): Promise<Income[]> {
         return await this.incomeRepository.find({
             relations: {
                 user: true,
