@@ -8,6 +8,7 @@ import { CategoryResponse, DefaultCategoryResponse, GetCategoriesResponse } from
 import { CurrentUser } from "../decorators/current-user.decorator";
 import { User } from "../user/user.entity";
 import { CustomCategoryIdentificationData } from "../types";
+import { CategoryId } from "./types";
 
 @Controller('category')
 export class CategoryController {
@@ -22,14 +23,14 @@ export class CategoryController {
 
     @UseGuards(AuthGuard('jwt'), AdminGuard)
     @Delete('/default/:id')
-    deleteDefault(@Param('id') id: string) {
+    deleteDefault(@Param('id') id: CategoryId) {
         return this.categoryService.deleteDefault(id)
     }
 
     @UseGuards(AuthGuard('jwt'), AdminGuard)
     @Serialize(DefaultCategoryResponse)
     @Patch('/default/:id')
-    editDefault(@Param('id') id: string, @Body() newCategory: CategoryNameDto) {
+    editDefault(@Param('id') id: CategoryId, @Body() newCategory: CategoryNameDto) {
         return this.categoryService.editDefault(id, newCategory.name)
     }
 
@@ -49,14 +50,14 @@ export class CategoryController {
 
     @UseGuards(AuthGuard('jwt'))
     @Delete('/:id')
-    delete(@Param('id') id: string, @CurrentUser() user: User) {
+    delete(@Param('id') id: CategoryId, @CurrentUser() user: User) {
         return this.categoryService.delete(id, user.id)
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Serialize(CategoryResponse)
     @Patch('/:id')
-    edit(@Param('id') id: string, @Body() newCategory: CategoryNameDto, @CurrentUser() user: User) {
+    edit(@Param('id') id: CategoryId, @Body() newCategory: CategoryNameDto, @CurrentUser() user: User) {
         const categoryIdentificationData: CustomCategoryIdentificationData = {
             categoryId: id,
             userId: user.id

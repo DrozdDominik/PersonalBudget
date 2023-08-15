@@ -1,4 +1,5 @@
 import { UserId, UserIdentificationData } from "../user/types";
+import { CategoryId } from "../category/types";
 
 type DbConfig = {
     host: string
@@ -23,6 +24,6 @@ export type TransactionIdentificationData = {
 }
 
 export type CustomCategoryIdentificationData = {
-    categoryId: string
+    categoryId: CategoryId
     userId: UserId
 }

@@ -1,11 +1,12 @@
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Income } from "../income/income.entity";
 import { User } from "../user/user.entity";
+import { CategoryId } from "./types";
 
 @Entity()
 export class Category {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: CategoryId;
 
     @Column({
         length: 30,

@@ -14,6 +14,7 @@ import { User } from "../user/user.entity"
 import { TransactionIdentificationData } from "../types";
 import { UserId, UserIdentificationData, UserRole } from "../user/types";
 import { CategoryService } from "../category/category.service";
+import { CategoryId } from "../category/types";
 
 @Injectable()
 export class IncomeService {
@@ -120,7 +121,7 @@ export class IncomeService {
            })
    }
 
-   async getAllByCategory(categoryId: string, userId: UserId): Promise<Income[]> {
+   async getAllByCategory(categoryId: CategoryId, userId: UserId): Promise<Income[]> {
         return await this.incomeRepository.find({
             relations: {
                 user: true,

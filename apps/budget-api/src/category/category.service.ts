@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Category } from "./category.entity";
 import { Repository } from "typeorm";
 import { CategoryNameDto } from "./dtos/category-name.dto";
-import { CategoryCreateData } from "./types";
+import { CategoryCreateData, CategoryId } from "./types";
 import { User } from "../user/user.entity";
 import { CustomCategoryIdentificationData } from "../types";
 import { IncomeService } from "../income/income.service";
@@ -37,7 +37,7 @@ export class CategoryService {
         })
     }
 
-    async findCustomById(id: string, userId: UserId) {
+    async findCustomById(id: CategoryId, userId: UserId) {
         return await this.categoryRepository.findOne({
             relations: {
                 incomes: true,
@@ -53,7 +53,7 @@ export class CategoryService {
         })
     }
 
-    async findDefaultOrCustomByUserAndId(id: string, userId: UserId): Promise<Category> {
+    async findDefaultOrCustomByUserAndId(id: CategoryId, userId: UserId): Promise<Category> {
         const defaultCategory = await this.findDefaultById(id)
 
         if (defaultCategory) {
@@ -69,7 +69,7 @@ export class CategoryService {
         return category
     }
 
-    async findDefaultById(id: string) {
+    async findDefaultById(id: CategoryId) {
         return await this.categoryRepository.findOne({
             relations: {incomes: true},
             where: {
@@ -147,7 +147,7 @@ export class CategoryService {
     }
 
 
-    async delete(id: string, userId: UserId) {
+    async delete(id: CategoryId, userId: UserId) {
         const category = await this.findCustomById(id, userId)
 
         if (!category) {
@@ -159,7 +159,7 @@ export class CategoryService {
         return affected === 1
     }
 
-    async deleteDefault(id: string) {
+    async deleteDefault(id: CategoryId) {
         const defaultCategory = await this.findDefaultById(id)
 
         if (!defaultCategory) {
@@ -191,7 +191,7 @@ export class CategoryService {
         return await this.categoryRepository.save(category)
     }
 
-    async editDefault(id: string, name: string) {
+    async editDefault(id: CategoryId, name: string) {
         const defaultCategory = await this.findDefaultById(id)
 
         if (!defaultCategory) {
