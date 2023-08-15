@@ -1,11 +1,12 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../user/user.entity";
 import { Category } from "../category/category.entity";
+import { IncomeId } from "./types";
 
 @Entity()
 export class Income {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: IncomeId;
 
     @Column({
         type: "decimal",

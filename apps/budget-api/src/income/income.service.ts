@@ -15,6 +15,7 @@ import { TransactionIdentificationData } from "../types";
 import { UserId, UserIdentificationData, UserRole } from "../user/types";
 import { CategoryService } from "../category/category.service";
 import { CategoryId } from "../category/types";
+import { IncomeId } from "./types";
 
 @Injectable()
 export class IncomeService {
@@ -69,7 +70,7 @@ export class IncomeService {
         return this.incomeRepository.save(income)
     }
 
-    async delete(id: string, user: UserIdentificationData): Promise<boolean> {
+    async delete(id: IncomeId, user: UserIdentificationData): Promise<boolean> {
         const income = await this.getOne(id, user)
 
         const { affected } = await this.incomeRepository.delete(income.id)
@@ -77,7 +78,7 @@ export class IncomeService {
         return affected === 1
     }
 
-    async getOne(id: string, user: UserIdentificationData): Promise<Income> {
+    async getOne(id: IncomeId, user: UserIdentificationData): Promise<Income> {
         const income = await this.incomeRepository.findOne(
             { where: {id},
                 relations: {

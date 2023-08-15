@@ -10,6 +10,7 @@ import { IncomeResponse } from "./dtos/income-response";
 import { EditIncomeDto } from "./dtos/edit-income.dto";
 import { TransactionIdentificationData } from "../types";
 import { UserIdentificationData } from "../user/types";
+import { IncomeId } from "./types";
 
 @Controller('income')
 export class IncomeController {
@@ -28,7 +29,7 @@ export class IncomeController {
     @Serialize(IncomeResponse)
     @Patch('/:id')
     editIncome(
-        @Param('id') id: string,
+        @Param('id') id: IncomeId,
         @Body() editedData: EditIncomeDto,
         @CurrentUser() user: User
     ): Promise<Income> {
@@ -45,7 +46,7 @@ export class IncomeController {
     @UseGuards(AuthGuard('jwt'))
     @Delete('/:id')
     deleteIncome(
-        @Param('id') id: string,
+        @Param('id') id: IncomeId,
         @CurrentUser() user: User
     ): Promise<boolean> {
         const userData: UserIdentificationData = {
@@ -71,7 +72,7 @@ export class IncomeController {
     @Serialize(IncomeResponse)
     @Get('/:id')
     getOne(
-        @Param('id') id: string,
+        @Param('id') id: IncomeId,
         @CurrentUser() user: User
     ): Promise<Income> {
         const userData: UserIdentificationData = {
