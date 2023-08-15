@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { RegisterUserDto } from "../dtos/register-user.dto";
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import * as utils from "../../utils";
-import { UserIdentificationData, UserRole } from "../types";
+import { UserId, UserIdentificationData, UserRole } from "../types";
 import { EditUserDto } from "../dtos/edit-user.dto";
 
 describe('UsersService', () => {
@@ -16,7 +16,7 @@ describe('UsersService', () => {
   let repo: Repository<User>;
 
   const user: User = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
     passwordHash: faker.internet.password(),
@@ -109,7 +109,7 @@ describe('UsersService', () => {
 
     it('should throw error if provided user id and current not admin logged user id are different', async () => {
       const loggedUserData: UserIdentificationData = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         role: UserRole.User,
       }
 
@@ -133,7 +133,7 @@ describe('UsersService', () => {
       }
 
       const anotherUser: User = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         name: faker.internet.userName(),
         email: faker.internet.email(),
         passwordHash: faker.internet.password(),
@@ -203,7 +203,7 @@ describe('UsersService', () => {
 
     it('should edit another user data by admin', async () => {
       const loggedUserData: UserIdentificationData = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         role: UserRole.Admin,
       }
 
@@ -238,7 +238,7 @@ describe('UsersService', () => {
 
     it('should throw error if provided user id and current not admin logged user id are different', async () => {
       const loggedUserData: UserIdentificationData = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         role: UserRole.User,
       }
 
@@ -263,7 +263,7 @@ describe('UsersService', () => {
 
     it('should delete another user by admin', async () => {
       const loggedUserData: UserIdentificationData = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         role: UserRole.Admin,
       }
 
@@ -290,7 +290,7 @@ describe('UsersService', () => {
 
     it('should throw error if provided user id and current not admin logged user id are different', async () => {
       const loggedUserData: UserIdentificationData = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         role: UserRole.User,
       }
 
@@ -314,7 +314,7 @@ describe('UsersService', () => {
 
     it('should return another user if user is admin', async () => {
       const loggedUserData: UserIdentificationData = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         role: UserRole.Admin,
       }
 

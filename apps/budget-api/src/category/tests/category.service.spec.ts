@@ -7,10 +7,10 @@ import { Category } from "../category.entity";
 import { Repository } from "typeorm";
 import { CategoryNameDto } from "../dtos/category-name.dto";
 import { faker } from "@faker-js/faker";
-import { CategoryCreateData } from "../types";
+import { CategoryCreateData, CategoryId } from "../types";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { User} from "../../user/user.entity";
-import { UserRole } from "../../user/types";
+import { UserId, UserRole } from "../../user/types";
 import { CustomCategoryIdentificationData } from "../../types";
 import { IncomeService } from "../../income/income.service";
 import { Income } from "../../income/income.entity";
@@ -27,7 +27,7 @@ describe('CategoryService', () => {
   }
 
   const firstDefaultCategory: Category = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: true,
     user: null,
@@ -35,7 +35,7 @@ describe('CategoryService', () => {
   }
 
   const secondDefaultCategory: Category = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: true,
     user: null,
@@ -43,7 +43,7 @@ describe('CategoryService', () => {
   }
 
   const firstUser: User = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
     passwordHash: faker.internet.password(),
@@ -54,7 +54,7 @@ describe('CategoryService', () => {
   }
 
   const firstCategory: Category = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: false,
     user: firstUser,
@@ -62,7 +62,7 @@ describe('CategoryService', () => {
   }
 
   const secondCategory: Category = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: false,
     user: firstUser,
@@ -136,7 +136,7 @@ describe('CategoryService', () => {
 
     const savedCategory: Category = {
       ...dataToSave,
-      id: faker.string.uuid(),
+      id: faker.string.uuid() as CategoryId,
       incomes: [],
     }
 

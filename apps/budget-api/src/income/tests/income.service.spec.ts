@@ -7,12 +7,13 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { CreateIncomeDto } from "../dtos/create-income.dto";
 import { faker } from "@faker-js/faker";
 import { User } from "../../user/user.entity";
-import { UserIdentificationData, UserRole } from "../../user/types";
+import { UserId, UserIdentificationData, UserRole } from "../../user/types";
 import { TransactionIdentificationData } from "../../types";
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { incomeFactory } from "./utils";
 import { Category } from "../../category/category.entity";
 import { CategoryService } from "../../category/category.service";
+import { CategoryId } from "../../category/types";
 
 describe('IncomeService', () => {
   let service: IncomeService;
@@ -21,7 +22,7 @@ describe('IncomeService', () => {
   let categoryRepo: Repository<Category>
 
   const firstUser: User = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
     passwordHash: faker.internet.password(),
@@ -32,7 +33,7 @@ describe('IncomeService', () => {
   }
 
   const admin: User = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
     passwordHash: faker.internet.password(),
@@ -45,12 +46,12 @@ describe('IncomeService', () => {
   const [firstUserIncome] = incomeFactory(1, firstUser.id)
 
   const editedData: Partial<CreateIncomeDto> = {
-    categoryId: faker.string.uuid(),
+    categoryId: faker.string.uuid() as CategoryId,
     amount: Number(faker.finance.amount(0, 1000000, 2))
   }
 
   const editedCategory: Category = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: false,
     user: firstUser,
@@ -63,7 +64,7 @@ describe('IncomeService', () => {
   }
 
   const secondUserIdentificationData: UserIdentificationData = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as UserId,
     role: UserRole.User,
   }
 
@@ -94,7 +95,7 @@ describe('IncomeService', () => {
   }
 
   const category: Category = {
-    id: faker.string.uuid(),
+    id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: false,
     user: firstUser,
@@ -102,7 +103,7 @@ describe('IncomeService', () => {
   }
 
   const incomeData: CreateIncomeDto = {
-    categoryId: faker.string.uuid(),
+    categoryId: faker.string.uuid() as CategoryId,
     amount: Number(faker.finance.amount(0, 1000000, 2)),
     date: faker.date.anytime({refDate: '18-06-2023'}),
   }
@@ -232,7 +233,7 @@ describe('IncomeService', () => {
     })
 
     it('should throw error if income belongs to another user', async () => {
-      const secondUserId = faker.string.uuid()
+      const secondUserId = faker.string.uuid() as UserId
       const [ secondUserIncome ] = incomeFactory(1, secondUserId)
 
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(secondUserIncome)
