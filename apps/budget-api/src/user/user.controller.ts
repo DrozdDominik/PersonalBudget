@@ -5,7 +5,7 @@ import { User } from './user.entity';
 import { Serialize } from '../interceptors/serialize.interceptor';
 import { RegisterResponseDto } from "./dtos/register-response.dto";
 import { CurrentUser } from "../decorators/current-user.decorator";
-import { UserIdentificationData } from "./types";
+import { UserId, UserIdentificationData } from "./types";
 import { AuthGuard } from "@nestjs/passport";
 import { EditUserDto } from "./dtos/edit-user.dto";
 import { EditUserResponseDto } from "./dtos/edit-user-response.dto";
@@ -26,7 +26,7 @@ export class UserController {
     @Serialize(EditUserResponseDto)
     @Patch('/:id')
     editUser(
-        @Param('id') id: string,
+        @Param('id') id: UserId,
         @Body() editedData: EditUserDto,
         @CurrentUser() user: User
     ): Promise<User> {
@@ -41,7 +41,7 @@ export class UserController {
     @UseGuards(AuthGuard('jwt'))
     @Delete('/:id')
     deleteUser(
-        @Param('id') id: string,
+        @Param('id') id: UserId,
         @CurrentUser() user: User
     ): Promise<boolean> {
         const userData: UserIdentificationData = {
@@ -55,7 +55,7 @@ export class UserController {
     @UseGuards(AuthGuard('jwt'))
     @Get('/:id')
     getUser(
-        @Param('id') id: string,
+        @Param('id') id: UserId,
         @CurrentUser() user: User
     ): Promise<User> {
         const userData: UserIdentificationData = {

@@ -1,8 +1,10 @@
 import { Expose, Transform } from "class-transformer";
+import { UserId } from "../../user/types";
+import { CategoryId } from "../types";
 
 export class DefaultCategoryResponse {
     @Expose()
-    id: string
+    id: CategoryId
 
     @Expose()
     name: string
@@ -13,7 +15,7 @@ export class DefaultCategoryResponse {
 
 export class CategoryResponse {
     @Expose()
-    id: string
+    id: CategoryId
 
     @Expose()
     name: string
@@ -23,12 +25,12 @@ export class CategoryResponse {
 
     @Transform(({ obj }) => obj.user.id)
     @Expose()
-    userId: string
+    userId: UserId
 }
 
 export class GetCategoriesResponse {
     @Expose()
-    id: string
+    id: CategoryId
 
     @Expose()
     name: string

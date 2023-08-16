@@ -3,10 +3,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Category } from "./category.entity";
 import { Repository } from "typeorm";
 import { CategoryNameDto } from "./dtos/category-name.dto";
-import { CategoryCreateData } from "./types";
+import { CategoryCreateData, CategoryId } from "./types";
 import { User } from "../user/user.entity";
 import { CustomCategoryIdentificationData } from "../types";
 import { IncomeService } from "../income/income.service";
+import { UserId } from "../user/types";
 
 @Injectable()
 export class CategoryService {
@@ -25,7 +26,7 @@ export class CategoryService {
         })
     }
 
-    async findCustomByUserAndName(name: string, userId: string):Promise<Category | null> {
+    async findCustomByUserAndName(name: string, userId: UserId):Promise<Category | null> {
         return await this.categoryRepository.findOne({
             where: {
                 name: name.toLowerCase(),
@@ -36,7 +37,7 @@ export class CategoryService {
         })
     }
 
-    async findCustomById(id: string, userId: string) {
+    async findCustomById(id: CategoryId, userId: UserId) {
         return await this.categoryRepository.findOne({
             relations: {
                 incomes: true,
@@ -52,7 +53,7 @@ export class CategoryService {
         })
     }
 
-    async findDefaultOrCustomByUserAndId(id: string, userId: string): Promise<Category> {
+    async findDefaultOrCustomByUserAndId(id: CategoryId, userId: UserId): Promise<Category> {
         const defaultCategory = await this.findDefaultById(id)
 
         if (defaultCategory) {
@@ -68,7 +69,7 @@ export class CategoryService {
         return category
     }
 
-    async findDefaultById(id: string) {
+    async findDefaultById(id: CategoryId) {
         return await this.categoryRepository.findOne({
             relations: {incomes: true},
             where: {
@@ -146,7 +147,7 @@ export class CategoryService {
     }
 
 
-    async delete(id: string, userId: string) {
+    async delete(id: CategoryId, userId: UserId) {
         const category = await this.findCustomById(id, userId)
 
         if (!category) {
@@ -158,7 +159,7 @@ export class CategoryService {
         return affected === 1
     }
 
-    async deleteDefault(id: string) {
+    async deleteDefault(id: CategoryId) {
         const defaultCategory = await this.findDefaultById(id)
 
         if (!defaultCategory) {
@@ -190,7 +191,7 @@ export class CategoryService {
         return await this.categoryRepository.save(category)
     }
 
-    async editDefault(id: string, name: string) {
+    async editDefault(id: CategoryId, name: string) {
         const defaultCategory = await this.findDefaultById(id)
 
         if (!defaultCategory) {
@@ -208,7 +209,7 @@ export class CategoryService {
         return await this.categoryRepository.save(defaultCategory)
     }
 
-    async getAll(userId: string): Promise<Category[]> {
+    async getAll(userId: UserId): Promise<Category[]> {
         return await this.categoryRepository.find({
             relations: {user: true},
             where: {
@@ -227,7 +228,7 @@ export class CategoryService {
         })
     }
 
-    async getAllAvailable(userId: string): Promise<Category[]> {
+    async getAllAvailable(userId: UserId): Promise<Category[]> {
         return await this.categoryRepository.find({
             relations: {user: true},
             where: [

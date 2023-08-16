@@ -9,7 +9,7 @@ import { AuthLoginDto } from "../dtos/auth-login.dto";
 import { faker } from "@faker-js/faker";
 import { Response } from 'express'
 import { BadRequestException } from "@nestjs/common";
-import { UserRole } from "../../user/types";
+import { UserId, UserRole } from "../../user/types";
 import * as utils from "../../utils";
 import * as jwt from "../jwt/token"
 
@@ -31,7 +31,7 @@ describe('AuthService', () => {
     const correctCredentials = incorrectCredentials
 
     const testUser: User = {
-        id: faker.string.uuid(),
+        id: faker.string.uuid() as UserId,
         name: faker.internet.userName(),
         email: faker.internet.email(),
         passwordHash: faker.internet.password(),

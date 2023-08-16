@@ -1,0 +1,1 @@
+export type IncomeId = string & { __IncomeId__: void }

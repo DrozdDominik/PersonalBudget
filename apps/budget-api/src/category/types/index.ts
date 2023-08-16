@@ -5,3 +5,5 @@ export type CategoryCreateData = {
     isDefault: boolean,
     user: User
 }
+
+export type CategoryId = string & { __CategoryId__: void }

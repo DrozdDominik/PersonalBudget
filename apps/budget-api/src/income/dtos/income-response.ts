@@ -1,8 +1,10 @@
 import { Expose, Transform } from "class-transformer";
+import { UserId } from "../../user/types";
+import { IncomeId } from "../types";
 
 export class IncomeResponse {
     @Expose()
-    id: string
+    id: IncomeId
 
     @Transform(({ obj }) => obj.category.name)
     @Expose()
@@ -16,5 +18,5 @@ export class IncomeResponse {
 
     @Transform(({ obj }) => obj.user.id)
     @Expose()
-    userId: string
+    userId: UserId
 }

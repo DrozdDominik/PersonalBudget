@@ -1,12 +1,12 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { UserRole } from "./types";
+import { UserId, UserRole } from "./types";
 import { Income } from "../income/income.entity";
 import { Category } from "../category/category.entity";
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: UserId;
 
     @Column({
         length: 30,

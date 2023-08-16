@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from "typeorm";
 import { User } from "./user.entity";
-import { NewUserData, UserIdentificationData, UserRole } from "./types";
+import { NewUserData, UserId, UserIdentificationData, UserRole } from "./types";
 import { InjectRepository } from "@nestjs/typeorm";
 import { RegisterUserDto } from "./dtos/register-user.dto";
 import { hashPassword } from "../utils";
@@ -20,7 +20,7 @@ export class UserService {
         return this.usersRepository.save(user)
     }
 
-    async findOneById(id: string) {
+    async findOneById(id: UserId) {
         return this.usersRepository.findOne({where: {id}});
     }
 
@@ -50,7 +50,7 @@ export class UserService {
         return await this.create(newUserData)
     }
 
-    async edit(id: string, userData: UserIdentificationData, editedData: EditUserDto) {
+    async edit(id: UserId, userData: UserIdentificationData, editedData: EditUserDto) {
         const user = await this.findOneById(id)
 
         if (!user) {
@@ -92,7 +92,7 @@ export class UserService {
         return this.usersRepository.save(user)
     }
 
-    async delete(id: string, userData: UserIdentificationData) {
+    async delete(id: UserId, userData: UserIdentificationData) {
         const user = await this.findOneById(id)
 
         if (!user) {
@@ -108,7 +108,7 @@ export class UserService {
         return affected === 1
     }
 
-    async get(id: string, userData: UserIdentificationData) {
+    async get(id: UserId, userData: UserIdentificationData) {
         const user = await this.findOneById(id)
 
         if (!user) {
