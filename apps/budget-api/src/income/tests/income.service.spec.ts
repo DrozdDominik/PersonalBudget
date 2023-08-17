@@ -192,6 +192,7 @@ describe('IncomeService', () => {
         category,
         amount: incomeData.amount,
         date: incomeData.date,
+        comment: undefined,
         id: undefined,
         user: undefined
       }

@@ -18,6 +18,7 @@ export const incomeFactory = (quantity: number, userId: UserId | null = null): I
             id: faker.string.uuid() as IncomeId,
             amount: Number(faker.finance.amount(0, 1000000, 2)),
             date: faker.date.anytime(),
+            comment: null,
             category: {
                 id: faker.string.uuid(),
             } as Category,

@@ -16,6 +16,9 @@ export class IncomeResponse {
     @Expose()
     date: Date
 
+    @Expose()
+    comment: string | null
+
     @Transform(({ obj }) => obj.user.id)
     @Expose()
     userId: UserId

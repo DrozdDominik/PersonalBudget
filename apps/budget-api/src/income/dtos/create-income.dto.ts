@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber, IsUUID, Min } from "class-validator";
+import { IsDateString, IsNumber, IsUUID, Min, IsOptional, IsString } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryId } from "../../category/types";
 
@@ -17,4 +17,9 @@ export class CreateIncomeDto {
     @ApiProperty()
     @IsDateString({strict: true})
     date: Date;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    comment?: string
 }
