@@ -12,15 +12,15 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { User} from "../../user/user.entity";
 import { UserId, UserRole } from "../../user/types";
 import { CustomCategoryIdentificationData } from "../../types";
-import { IncomeService } from "../../income/income.service";
-import { Income } from "../../income/income.entity";
-import { incomeFactory } from "../../income/tests/utils";
+import { TransactionService } from "../../transaction/transaction.service";
+import { Transaction } from "../../transaction/transaction.entity";
+import { transactionFactory } from "../../transaction/tests/utils";
 
 describe('CategoryService', () => {
   let service: CategoryService;
   let repo: Repository<Category>
-  let incomeService: IncomeService;
-  let incomeRepo: Repository<Income>
+  let transactionService: TransactionService;
+  let transactionRepo: Repository<Transaction>
 
   const testData: CategoryNameDto = {
     name: faker.word.noun()
@@ -31,7 +31,7 @@ describe('CategoryService', () => {
     name: faker.word.noun(),
     isDefault: true,
     user: null,
-    incomes: []
+    transactions: []
   }
 
   const secondDefaultCategory: Category = {
@@ -39,7 +39,7 @@ describe('CategoryService', () => {
     name: faker.word.noun(),
     isDefault: true,
     user: null,
-    incomes: []
+    transactions: []
   }
 
   const firstUser: User = {
@@ -49,7 +49,7 @@ describe('CategoryService', () => {
     passwordHash: faker.internet.password(),
     currentToken: null,
     role: UserRole.User,
-    incomes: [],
+    transactions: [],
     categories: [],
   }
 
@@ -58,7 +58,7 @@ describe('CategoryService', () => {
     name: faker.word.noun(),
     isDefault: false,
     user: firstUser,
-    incomes: []
+    transactions: []
   }
 
   const secondCategory: Category = {
@@ -66,7 +66,7 @@ describe('CategoryService', () => {
     name: faker.word.noun(),
     isDefault: false,
     user: firstUser,
-    incomes: []
+    transactions: []
   }
 
   const testCategoryIdentificationData: CustomCategoryIdentificationData = {
@@ -91,7 +91,7 @@ describe('CategoryService', () => {
       controllers: [CategoryController],
       providers: [
           CategoryService,
-          IncomeService,
+          TransactionService,
         {
           provide: getRepositoryToken(Category),
           useValue: {
@@ -102,7 +102,7 @@ describe('CategoryService', () => {
           },
         },
         {
-          provide: getRepositoryToken(Income),
+          provide: getRepositoryToken(Transaction),
           useValue: {
             create: vi.fn(),
             save: vi.fn(),
@@ -118,9 +118,9 @@ describe('CategoryService', () => {
 
     repo = module.get<Repository<Category>>(getRepositoryToken(Category))
 
-    incomeService = module.get<IncomeService>(IncomeService);
+    transactionService = module.get<TransactionService>(TransactionService);
 
-    incomeRepo = module.get<Repository<Income>>(getRepositoryToken(Income));
+    transactionRepo = module.get<Repository<Transaction>>(getRepositoryToken(Transaction));
   });
 
   it('should be defined', () => {
@@ -137,7 +137,7 @@ describe('CategoryService', () => {
     const savedCategory: Category = {
       ...dataToSave,
       id: faker.string.uuid() as CategoryId,
-      incomes: [],
+      transactions: [],
     }
 
     it('should call categoryRepository.create method with correct data', async () => {
@@ -160,7 +160,7 @@ describe('CategoryService', () => {
       vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
       vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory])
-      vi.spyOn(incomeService, 'getAllByCategory').mockResolvedValueOnce([])
+      vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValueOnce([])
       vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
 
       await service.createDefault(testData)
@@ -173,7 +173,7 @@ describe('CategoryService', () => {
       vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
       vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory, secondCategory])
-      vi.spyOn(incomeService, 'getAllByCategory').mockResolvedValue([])
+      vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValue([])
       vi.spyOn(service, 'delete').mockResolvedValue(true)
 
       await service.createDefault(testData)
@@ -181,23 +181,23 @@ describe('CategoryService', () => {
       expect(service.delete).toHaveBeenCalledTimes(2)
     })
 
-    it('should call incomeService.save method with income with correct edited category id', async () => {
-      const incomesArr = incomeFactory(2, firstCategory.user.id)
+    it('should call transactionService.save method with transaction with correct edited category id', async () => {
+      const transactionsArr = transactionFactory(2, firstCategory.user.id)
 
       vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
       vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory])
-      vi.spyOn(incomeService, 'getAllByCategory').mockResolvedValueOnce(incomesArr)
+      vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValueOnce(transactionsArr)
       vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
-      vi.spyOn(incomeService, 'save')
+      vi.spyOn(transactionService, 'save')
 
-      const lastIncome = incomesArr.at(-1)
-      lastIncome.category.id = savedCategory.id
+      const lastTransaction = transactionsArr.at(-1)
+      lastTransaction.category.id = savedCategory.id
 
       await service.createDefault(testData)
 
-      expect(incomeService.save).toHaveBeenCalledTimes(2)
-      expect(incomeService.save).toHaveBeenLastCalledWith(lastIncome)
+      expect(transactionService.save).toHaveBeenCalledTimes(2)
+      expect(transactionService.save).toHaveBeenLastCalledWith(lastTransaction)
     })
   })
 

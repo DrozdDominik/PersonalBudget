@@ -1,6 +1,6 @@
 import { UserId, UserIdentificationData } from "../user/types";
 import { CategoryId } from "../category/types";
-import { IncomeId } from "../income/types";
+import { TransactionId } from "../transaction/types";
 
 type DbConfig = {
     host: string
@@ -20,7 +20,7 @@ export interface Config {
 }
 
 export type TransactionIdentificationData = {
-    transactionId: IncomeId
+    transactionId: TransactionId
     user: UserIdentificationData
 }
 

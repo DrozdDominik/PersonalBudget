@@ -1,21 +1,21 @@
-import { Income } from "../../income.entity";
+import { Transaction } from "../../transaction.entity";
 import { faker } from "@faker-js/faker";
 import { User } from "../../../user/user.entity";
 import { Category } from "../../../category/category.entity";
 import { UserId } from "../../../user/types";
-import { IncomeId } from "../../types";
+import { TransactionId } from "../../types";
 
 
-export const incomeFactory = (quantity: number, userId: UserId | null = null): Income[]  => {
+export const transactionFactory = (quantity: number, userId: UserId | null = null): Transaction[]  => {
     if (quantity <= 0) {
         throw new Error('Quantity must be integer greater than zero')
     }
 
-    const incomes: Income[] = []
+    const transactions: Transaction[] = []
 
     for (let i = 0; i < quantity; i++) {
-        const income: Income = {
-            id: faker.string.uuid() as IncomeId,
+        const transaction: Transaction = {
+            id: faker.string.uuid() as TransactionId,
             amount: Number(faker.finance.amount(0, 1000000, 2)),
             date: faker.date.anytime(),
             comment: null,
@@ -27,8 +27,8 @@ export const incomeFactory = (quantity: number, userId: UserId | null = null): I
             } as User,
         }
 
-        incomes.push(income)
+        transactions.push(transaction)
     }
 
-    return incomes
+    return transactions
 }

@@ -2,7 +2,7 @@ import { IsDateString, IsNumber, IsUUID, Min, IsOptional, IsString } from "class
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryId } from "../../category/types";
 
-export class CreateIncomeDto {
+export class CreateTransactionDto {
     @ApiProperty()
     @IsUUID()
     categoryId: CategoryId;

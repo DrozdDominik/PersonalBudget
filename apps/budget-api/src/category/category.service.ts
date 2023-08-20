@@ -6,7 +6,7 @@ import { CategoryNameDto } from "./dtos/category-name.dto";
 import { CategoryCreateData, CategoryId } from "./types";
 import { User } from "../user/user.entity";
 import { CustomCategoryIdentificationData } from "../types";
-import { IncomeService } from "../income/income.service";
+import { TransactionService } from "../transaction/transaction.service";
 import { UserId } from "../user/types";
 
 @Injectable()
@@ -14,7 +14,7 @@ export class CategoryService {
     constructor(
         @InjectRepository(Category)
         private categoryRepository: Repository<Category>,
-        @Inject(forwardRef( () => IncomeService)) private incomeService: IncomeService,
+        @Inject(forwardRef( () => TransactionService)) private transactionService: TransactionService,
     ) {}
 
     async findDefaultByName(name: string): Promise<Category | null> {
@@ -40,7 +40,7 @@ export class CategoryService {
     async findCustomById(id: CategoryId, userId: UserId) {
         return await this.categoryRepository.findOne({
             relations: {
-                incomes: true,
+                transactions: true,
                 user: true,
             },
             where: {
@@ -71,7 +71,7 @@ export class CategoryService {
 
     async findDefaultById(id: CategoryId) {
         return await this.categoryRepository.findOne({
-            relations: {incomes: true},
+            relations: {transactions: true},
             where: {
                 id,
                 isDefault: true,
@@ -100,10 +100,10 @@ export class CategoryService {
 
         if (customCategories.length > 0) {
             customCategories.map(async category => {
-                const incomes = await this.incomeService.getAllByCategory(category.id, category.user.id)
-                await Promise.all(incomes.map( income => {
-                    income.category.id = savedNewDefaultCategory.id
-                    return this.incomeService.save(income)
+                const transactions = await this.transactionService.getAllByCategory(category.id, category.user.id)
+                await Promise.all(transactions.map( transaction => {
+                    transaction.category.id = savedNewDefaultCategory.id
+                    return this.transactionService.save(transaction)
                 } ) )
             })
 

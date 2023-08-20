@@ -1,12 +1,12 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../user/user.entity";
 import { Category } from "../category/category.entity";
-import { IncomeId } from "./types";
+import { TransactionId } from "./types";
 
 @Entity()
-export class Income {
+export class Transaction {
     @PrimaryGeneratedColumn("uuid")
-    id: IncomeId;
+    id: TransactionId;
 
     @Column({
         type: "decimal",
@@ -29,9 +29,9 @@ export class Income {
     })
     comment: string | null
 
-    @ManyToOne(() => User, user => user.incomes, {onDelete: "CASCADE"})
+    @ManyToOne(() => User, user => user.transactions, {onDelete: "CASCADE"})
     user: User
 
-    @ManyToOne(() => Category, category => category.incomes, {onDelete: "SET NULL"})
+    @ManyToOne(() => Category, category => category.transactions, {onDelete: "SET NULL"})
     category: Category
 }

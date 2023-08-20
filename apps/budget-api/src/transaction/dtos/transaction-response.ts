@@ -1,10 +1,10 @@
 import { Expose, Transform } from "class-transformer";
 import { UserId } from "../../user/types";
-import { IncomeId } from "../types";
+import { TransactionId } from "../types";
 
-export class IncomeResponse {
+export class TransactionResponse {
     @Expose()
-    id: IncomeId
+    id: TransactionId
 
     @Transform(({ obj }) => obj.category.name)
     @Expose()

@@ -1,5 +1,5 @@
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Income } from "../income/income.entity";
+import { Transaction } from "../transaction/transaction.entity";
 import { User } from "../user/user.entity";
 import { CategoryId } from "./types";
 
@@ -20,6 +20,6 @@ export class Category {
     @ManyToOne(() => User, user => user.categories, {onDelete: "CASCADE"})
     user: User
 
-    @OneToMany(() => Income, income => income.category)
-    incomes: Income[]
+    @OneToMany(() => Transaction, transaction => transaction.category)
+    transactions: Transaction[]
 }

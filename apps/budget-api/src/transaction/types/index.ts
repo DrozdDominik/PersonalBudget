@@ -1,0 +1,1 @@
+export type TransactionId = string & { __TransactionId__: void }
