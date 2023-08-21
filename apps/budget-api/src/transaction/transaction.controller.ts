@@ -12,7 +12,7 @@ import { TransactionIdentificationData } from "../types";
 import { UserIdentificationData } from "../user/types";
 import { TransactionId } from "./types";
 
-@Controller('income')
+@Controller('transaction')
 export class TransactionController {
     constructor(
         private transactionService: TransactionService
@@ -21,14 +21,14 @@ export class TransactionController {
     @UseGuards(AuthGuard('jwt'))
     @Serialize(TransactionResponse)
     @Post('/')
-    createIncome(@Body() newIncome: CreateTransactionDto, @CurrentUser() user: User): Promise<Transaction> {
+    createTransaction(@Body() newIncome: CreateTransactionDto, @CurrentUser() user: User): Promise<Transaction> {
         return this.transactionService.create(newIncome, user)
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Serialize(TransactionResponse)
     @Patch('/:id')
-    editIncome(
+    editTransaction(
         @Param('id') id: TransactionId,
         @Body() editedData: EditTransactionDto,
         @CurrentUser() user: User
@@ -45,7 +45,7 @@ export class TransactionController {
 
     @UseGuards(AuthGuard('jwt'))
     @Delete('/:id')
-    deleteIncome(
+    deleteTransaction(
         @Param('id') id: TransactionId,
         @CurrentUser() user: User
     ): Promise<boolean> {
