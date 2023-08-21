@@ -14,6 +14,7 @@ import { transactionFactory } from "./utils";
 import { Category } from "../../category/category.entity";
 import { CategoryService } from "../../category/category.service";
 import { CategoryId } from "../../category/types";
+import { TransactionType } from "../types";
 
 describe('TransactionService', () => {
   let service: TransactionService;
@@ -43,7 +44,7 @@ describe('TransactionService', () => {
     categories: [],
   }
 
-  const [firstUserTransaction] = transactionFactory(1, firstUser.id)
+  const [firstUserTransaction] = transactionFactory(1, TransactionType.INCOME, firstUser.id)
 
   const editedData: Partial<CreateTransactionDto> = {
     categoryId: faker.string.uuid() as CategoryId,
@@ -103,6 +104,7 @@ describe('TransactionService', () => {
   }
 
   const transactionData: CreateTransactionDto = {
+    type: TransactionType.INCOME,
     categoryId: faker.string.uuid() as CategoryId,
     amount: Number(faker.finance.amount(0, 1000000, 2)),
     date: faker.date.anytime({refDate: '18-06-2023'}),
@@ -190,6 +192,7 @@ describe('TransactionService', () => {
     it('should call transactionRepository.save method with correct data', async () => {
       const createdTransaction: Transaction = {
         category,
+        type: TransactionType.INCOME,
         amount: transactionData.amount,
         date: transactionData.date,
         comment: undefined,
@@ -235,7 +238,7 @@ describe('TransactionService', () => {
 
     it('should throw error if transaction belongs to another user', async () => {
       const secondUserId = faker.string.uuid() as UserId
-      const [ secondUserTransaction ] = transactionFactory(1, secondUserId)
+      const [ secondUserTransaction ] = transactionFactory(1, TransactionType.INCOME, secondUserId)
 
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(secondUserTransaction)
 

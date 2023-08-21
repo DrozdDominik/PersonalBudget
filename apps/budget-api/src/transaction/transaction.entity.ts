@@ -1,12 +1,18 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../user/user.entity";
 import { Category } from "../category/category.entity";
-import { TransactionId } from "./types";
+import { TransactionId, TransactionType } from "./types";
 
 @Entity()
 export class Transaction {
     @PrimaryGeneratedColumn("uuid")
     id: TransactionId;
+
+    @Column({
+        type: "enum",
+        enum: TransactionType
+    })
+    type: TransactionType
 
     @Column({
         type: "decimal",

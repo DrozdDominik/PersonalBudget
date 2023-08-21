@@ -3,10 +3,10 @@ import { faker } from "@faker-js/faker";
 import { User } from "../../../user/user.entity";
 import { Category } from "../../../category/category.entity";
 import { UserId } from "../../../user/types";
-import { TransactionId } from "../../types";
+import { TransactionId, TransactionType } from "../../types";
 
 
-export const transactionFactory = (quantity: number, userId: UserId | null = null): Transaction[]  => {
+export const transactionFactory = (quantity: number, type: TransactionType,  userId: UserId | null = null): Transaction[]  => {
     if (quantity <= 0) {
         throw new Error('Quantity must be integer greater than zero')
     }
@@ -16,6 +16,7 @@ export const transactionFactory = (quantity: number, userId: UserId | null = nul
     for (let i = 0; i < quantity; i++) {
         const transaction: Transaction = {
             id: faker.string.uuid() as TransactionId,
+            type,
             amount: Number(faker.finance.amount(0, 1000000, 2)),
             date: faker.date.anytime(),
             comment: null,
