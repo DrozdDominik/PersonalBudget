@@ -5,8 +5,8 @@ import { CategoryService } from "../category.service";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Category } from "../category.entity";
 import { Repository } from "typeorm";
-import { Income } from "../../income/income.entity";
-import { IncomeService } from "../../income/income.service";
+import { Transaction } from "../../transaction/transaction.entity";
+import { TransactionService } from "../../transaction/transaction.service";
 
 describe('CategoryController', () => {
   let controller: CategoryController;
@@ -16,13 +16,13 @@ describe('CategoryController', () => {
       controllers: [CategoryController],
       providers: [
         CategoryService,
-        IncomeService,
+        TransactionService,
         {
           provide: getRepositoryToken(Category),
           useClass: Repository,
         },
         {
-          provide: getRepositoryToken(Income),
+          provide: getRepositoryToken(Transaction),
           useClass: Repository,
         },
       ],

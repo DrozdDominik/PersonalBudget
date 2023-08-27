@@ -7,26 +7,26 @@ import {
     NotFoundException
 } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
-import { Income } from "./income.entity";
+import { Transaction } from "./transaction.entity";
 import { Repository } from "typeorm";
-import { CreateIncomeDto } from "./dtos/create-income.dto";
+import { CreateTransactionDto } from "./dtos/create-transaction.dto";
 import { User } from "../user/user.entity"
 import { TransactionIdentificationData } from "../types";
 import { UserId, UserIdentificationData, UserRole } from "../user/types";
 import { CategoryService } from "../category/category.service";
 import { CategoryId } from "../category/types";
-import { IncomeId } from "./types";
+import { TransactionId } from "./types";
 
 @Injectable()
-export class IncomeService {
+export class TransactionService {
     constructor(
-        @InjectRepository(Income)
-        private incomeRepository: Repository<Income>,
+        @InjectRepository(Transaction)
+        private transactionRepository: Repository<Transaction>,
         @Inject(forwardRef( () => CategoryService) ) private categoryService: CategoryService,
     ) {}
 
-    async create(data: CreateIncomeDto, user: User): Promise<Income> {
-        const { categoryId, ...incomeData} = data
+    async create(data: CreateTransactionDto, user: User): Promise<Transaction> {
+        const { categoryId, ...transactionData} = data
 
         const category = await this.categoryService.findDefaultOrCustomByUserAndId(categoryId, user.id)
 
@@ -34,25 +34,25 @@ export class IncomeService {
             throw new BadRequestException()
         }
 
-        const income = this.incomeRepository.create(incomeData)
+        const transaction = this.transactionRepository.create(transactionData)
 
-        income.user = user
-        income.category = category
+        transaction.user = user
+        transaction.category = category
 
-        return this.incomeRepository.save(income)
+        return this.transactionRepository.save(transaction)
     }
 
     async edit(
         identificationData: TransactionIdentificationData,
-        editedData: Partial<CreateIncomeDto>
-    ): Promise<Income> {
+        editedData: Partial<CreateTransactionDto>
+    ): Promise<Transaction> {
         const { transactionId, user } = identificationData
 
-        const income = await this.getOne(transactionId, user)
+        const transaction = await this.getOne(transactionId, user)
 
         const { categoryId, ...dataToEdit } = editedData
 
-        Object.assign(income, dataToEdit)
+        Object.assign(transaction, dataToEdit)
 
         if (!!categoryId) {
              const category = await this.categoryService.findDefaultOrCustomByUserAndId(
@@ -64,22 +64,22 @@ export class IncomeService {
                 throw new BadRequestException()
             }
 
-            Object.assign(income.category, category)
+            Object.assign(transaction.category, category)
         }
 
-        return this.incomeRepository.save(income)
+        return this.transactionRepository.save(transaction)
     }
 
-    async delete(id: IncomeId, user: UserIdentificationData): Promise<boolean> {
-        const income = await this.getOne(id, user)
+    async delete(id: TransactionId, user: UserIdentificationData): Promise<boolean> {
+        const transaction = await this.getOne(id, user)
 
-        const { affected } = await this.incomeRepository.delete(income.id)
+        const { affected } = await this.transactionRepository.delete(transaction.id)
 
         return affected === 1
     }
 
-    async getOne(id: IncomeId, user: UserIdentificationData): Promise<Income> {
-        const income = await this.incomeRepository.findOne(
+    async getOne(id: TransactionId, user: UserIdentificationData): Promise<Transaction> {
+        const transaction = await this.transactionRepository.findOne(
             { where: {id},
                 relations: {
                 user: true,
@@ -88,28 +88,28 @@ export class IncomeService {
             }
         )
 
-        if (!income) {
+        if (!transaction) {
             throw new NotFoundException()
         }
 
-        if (income.user.id !== user.id && user.role !== UserRole.Admin) {
+        if (transaction.user.id !== user.id && user.role !== UserRole.Admin) {
             throw new ForbiddenException()
         }
 
-        return income
+        return transaction
     }
 
-    async getAll(user: UserIdentificationData): Promise<Income[]> {
+    async getAll(user: UserIdentificationData): Promise<Transaction[]> {
        return user.role === UserRole.Admin
            ?
-           await this.incomeRepository.find({
+           await this.transactionRepository.find({
               relations: {
                   user: true,
                   category: true,
               },
           })
            :
-           await this.incomeRepository.find({
+           await this.transactionRepository.find({
                relations: {
                    user: true,
                    category: true
@@ -122,8 +122,8 @@ export class IncomeService {
            })
    }
 
-   async getAllByCategory(categoryId: CategoryId, userId: UserId): Promise<Income[]> {
-        return await this.incomeRepository.find({
+   async getAllByCategory(categoryId: CategoryId, userId: UserId): Promise<Transaction[]> {
+        return await this.transactionRepository.find({
             relations: {
                 user: true,
                 category: true
@@ -139,7 +139,7 @@ export class IncomeService {
         })
    }
 
-   async save(income: Income): Promise<Income> {
-        return await this.incomeRepository.save(income)
+   async save(transaction: Transaction): Promise<Transaction> {
+        return await this.transactionRepository.save(transaction)
    }
 }

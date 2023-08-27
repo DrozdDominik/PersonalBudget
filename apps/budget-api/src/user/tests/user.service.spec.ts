@@ -22,7 +22,7 @@ describe('UsersService', () => {
     passwordHash: faker.internet.password(),
     currentToken: null,
     role: UserRole.User,
-    incomes: [],
+    transactions: [],
     categories: [],
   };
 
@@ -139,7 +139,7 @@ describe('UsersService', () => {
         passwordHash: faker.internet.password(),
         currentToken: null,
         role: UserRole.User,
-        incomes: [],
+        transactions: [],
         categories: [],
       };
 

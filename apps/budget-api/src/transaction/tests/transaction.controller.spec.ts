@@ -1,24 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { IncomeController } from '../income.controller';
+import { TransactionController } from '../transaction.controller';
 import { describe, beforeEach, it, expect } from 'vitest'
-import { IncomeService } from "../income.service";
+import { TransactionService } from "../transaction.service";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Income } from "../income.entity";
+import { Transaction } from "../transaction.entity";
 import { Repository } from "typeorm";
 import { CategoryService } from "../../category/category.service";
 import { Category } from "../../category/category.entity";
 
-describe('IncomeController', () => {
-  let controller: IncomeController;
+describe('TransactionController', () => {
+  let controller: TransactionController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [IncomeController],
+      controllers: [TransactionController],
       providers: [
-          IncomeService,
+          TransactionService,
           CategoryService,
         {
-          provide: getRepositoryToken(Income),
+          provide: getRepositoryToken(Transaction),
           useClass: Repository,
         },
         {
@@ -28,7 +28,7 @@ describe('IncomeController', () => {
       ]
     }).compile();
 
-    controller = module.get<IncomeController>(IncomeController);
+    controller = module.get<TransactionController>(TransactionController);
   });
 
   it('should be defined', () => {

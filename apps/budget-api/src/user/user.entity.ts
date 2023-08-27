@@ -1,6 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { UserId, UserRole } from "./types";
-import { Income } from "../income/income.entity";
+import { Transaction } from "../transaction/transaction.entity";
 import { Category } from "../category/category.entity";
 
 @Entity()
@@ -36,8 +36,8 @@ export class User {
     })
     currentToken: string | null
 
-    @OneToMany(() => Income, income => income.user )
-    incomes: Income[]
+    @OneToMany(() => Transaction, transaction => transaction.user )
+    transactions: Transaction[]
 
     @OneToMany(() => Category, category => category.user )
     categories: Category[]

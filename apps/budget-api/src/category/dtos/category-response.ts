@@ -1,6 +1,7 @@
 import { Expose, Transform } from "class-transformer";
 import { UserId } from "../../user/types";
 import { CategoryId } from "../types";
+import { TransactionType } from "../../transaction/types";
 
 export class DefaultCategoryResponse {
     @Expose()
@@ -11,17 +12,15 @@ export class DefaultCategoryResponse {
 
     @Expose()
     isDefault: boolean
+
+    @Expose()
+    transactionType: TransactionType
 }
 
-export class CategoryResponse {
-    @Expose()
-    id: CategoryId
-
-    @Expose()
-    name: string
-
-    @Expose()
-    isDefault: boolean
+export class CategoryResponse extends DefaultCategoryResponse{
+    constructor() {
+        super();
+    }
 
     @Transform(({ obj }) => obj.user.id)
     @Expose()

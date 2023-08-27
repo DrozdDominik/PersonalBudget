@@ -1,8 +1,13 @@
-import { IsDateString, IsNumber, IsUUID, Min } from "class-validator";
+import { IsDateString, IsNumber, IsUUID, Min, IsOptional, IsString, IsEnum } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryId } from "../../category/types";
+import { TransactionType } from "../types";
 
-export class CreateIncomeDto {
+export class CreateTransactionDto {
+    @ApiProperty()
+    @IsEnum(TransactionType)
+    type: TransactionType;
+
     @ApiProperty()
     @IsUUID()
     categoryId: CategoryId;
@@ -17,4 +22,9 @@ export class CreateIncomeDto {
     @ApiProperty()
     @IsDateString({strict: true})
     date: Date;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    comment?: string
 }
