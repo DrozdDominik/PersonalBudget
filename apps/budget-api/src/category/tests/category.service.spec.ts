@@ -5,16 +5,18 @@ import { CategoryController } from "../category.controller";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Category } from "../category.entity";
 import { Repository } from "typeorm";
-import { CategoryNameDto } from "../dtos/category-name.dto";
+import { CategoryCreateDto } from "../dtos/category-create.dto";
 import { faker } from "@faker-js/faker";
 import { CategoryCreateData, CategoryId } from "../types";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { User} from "../../user/user.entity";
+import { User } from "../../user/user.entity";
 import { UserId, UserRole } from "../../user/types";
 import { CustomCategoryIdentificationData } from "../../types";
 import { TransactionService } from "../../transaction/transaction.service";
 import { Transaction } from "../../transaction/transaction.entity";
 import { transactionFactory } from "../../transaction/tests/utils";
+import { TransactionType } from "../../transaction/types";
+import { CategoryEditDto } from "../dtos/category-edit.dto";
 
 describe('CategoryService', () => {
   let service: CategoryService;
@@ -22,14 +24,16 @@ describe('CategoryService', () => {
   let transactionService: TransactionService;
   let transactionRepo: Repository<Transaction>
 
-  const testData: CategoryNameDto = {
-    name: faker.word.noun()
+  const testData: CategoryCreateDto = {
+    name: faker.word.noun(),
+    transactionType: TransactionType.INCOME
   }
 
   const firstDefaultCategory: Category = {
     id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: true,
+    transactionType: TransactionType.INCOME,
     user: null,
     transactions: []
   }
@@ -38,6 +42,7 @@ describe('CategoryService', () => {
     id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: true,
+    transactionType: TransactionType.INCOME,
     user: null,
     transactions: []
   }
@@ -57,6 +62,7 @@ describe('CategoryService', () => {
     id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: false,
+    transactionType: TransactionType.INCOME,
     user: firstUser,
     transactions: []
   }
@@ -65,25 +71,28 @@ describe('CategoryService', () => {
     id: faker.string.uuid() as CategoryId,
     name: faker.word.noun(),
     isDefault: false,
+    transactionType: TransactionType.INCOME,
     user: firstUser,
     transactions: []
   }
 
   const testCategoryIdentificationData: CustomCategoryIdentificationData = {
     categoryId: firstCategory.id,
-    userId: firstUser.id
+    userId: firstUser.id,
   }
 
-  const newCategoryName = faker.word.noun()
+  const categoryEditedData: CategoryEditDto = {
+    name: faker.word.noun()
+  }
 
   const editedCategory = {
     ...firstCategory,
-    name: newCategoryName,
+    name: categoryEditedData.name,
   }
 
   const editedDefaultCategory = {
     ...firstDefaultCategory,
-    name: newCategoryName,
+    name: categoryEditedData.name,
   }
 
   beforeEach(async () => {
@@ -130,6 +139,7 @@ describe('CategoryService', () => {
   describe('Create default method', () => {
     const dataToSave: CategoryCreateData = {
       name: testData.name,
+      transactionType: TransactionType.INCOME,
       isDefault: true,
       user: null
     }
@@ -141,9 +151,9 @@ describe('CategoryService', () => {
     }
 
     it('should call categoryRepository.create method with correct data', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
-      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([])
+      vi.spyOn(service, 'getAllCustomByNameAndTransactionType').mockResolvedValueOnce([])
 
       await service.createDefault(testData)
 
@@ -151,15 +161,15 @@ describe('CategoryService', () => {
     })
 
     it('should throw error if category already exists', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(firstDefaultCategory)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(firstDefaultCategory)
 
       await expect(service.createDefault(testData)).rejects.toThrowError(BadRequestException)
     })
 
     it('should call this.delete method with correct data', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
-      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory])
+      vi.spyOn(service, 'getAllCustomByNameAndTransactionType').mockResolvedValueOnce([firstCategory])
       vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValueOnce([])
       vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
 
@@ -170,9 +180,9 @@ describe('CategoryService', () => {
     })
 
     it('should call this.delete method the same number as the number of custom categories found', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
-      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory, secondCategory])
+      vi.spyOn(service, 'getAllCustomByNameAndTransactionType').mockResolvedValueOnce([firstCategory, secondCategory])
       vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValue([])
       vi.spyOn(service, 'delete').mockResolvedValue(true)
 
@@ -182,11 +192,11 @@ describe('CategoryService', () => {
     })
 
     it('should call transactionService.save method with transaction with correct edited category id', async () => {
-      const transactionsArr = transactionFactory(2, firstCategory.user.id)
+      const transactionsArr = transactionFactory(2, TransactionType.INCOME, firstCategory.user.id)
 
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(null)
       vi.spyOn(repo, 'save').mockResolvedValueOnce(savedCategory)
-      vi.spyOn(service, 'getAllCustomByName').mockResolvedValueOnce([firstCategory])
+      vi.spyOn(service, 'getAllCustomByNameAndTransactionType').mockResolvedValueOnce([firstCategory])
       vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValueOnce(transactionsArr)
       vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
       vi.spyOn(transactionService, 'save')
@@ -203,12 +213,13 @@ describe('CategoryService', () => {
 
   describe('Create method', () => {
     it('should call categoryRepository.create method with correct data', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
-      vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findCustomByUserAndNameAndTransactionType').mockResolvedValueOnce(null)
 
       const dataToSave: CategoryCreateData = {
         name: testData.name,
         isDefault: false,
+        transactionType: TransactionType.INCOME,
         user: firstUser
       }
 
@@ -218,14 +229,14 @@ describe('CategoryService', () => {
     })
 
     it('should throw error if same default category already exists', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(firstDefaultCategory)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(firstDefaultCategory)
 
       await expect(service.create(testData, firstUser)).rejects.toThrowError(BadRequestException)
     })
 
     it('should throw error if same user category already exists', async () => {
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
-      vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(firstCategory)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findCustomByUserAndNameAndTransactionType').mockResolvedValueOnce(firstCategory)
 
       await expect(service.create(testData, firstUser)).rejects.toThrowError(BadRequestException)
     })
@@ -268,9 +279,9 @@ describe('CategoryService', () => {
   describe('Edit method', () => {
     it('should call categoryRepository.save method correctly edited name', async () => {
       vi.spyOn(service, 'findCustomById').mockResolvedValueOnce(firstCategory)
-      vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findCustomByUserAndNameAndTransactionType').mockResolvedValueOnce(null)
 
-      await service.edit(testCategoryIdentificationData, newCategoryName)
+      await service.edit(testCategoryIdentificationData, categoryEditedData)
 
       expect(repo.save).toHaveBeenCalledWith(editedCategory)
     })
@@ -278,23 +289,23 @@ describe('CategoryService', () => {
     it('should throw error if there is no such category', async () => {
       vi.spyOn(service, 'findCustomById').mockResolvedValueOnce(null)
 
-      await expect(service.edit(testCategoryIdentificationData, newCategoryName)).rejects.toThrowError(NotFoundException)
+      await expect(service.edit(testCategoryIdentificationData, categoryEditedData)).rejects.toThrowError(NotFoundException)
     })
 
     it('should throw error if this user category with same name already exists', async () => {
       vi.spyOn(service, 'findCustomById').mockResolvedValueOnce(firstCategory)
-      vi.spyOn(service, 'findCustomByUserAndName').mockResolvedValueOnce(secondCategory)
+      vi.spyOn(service, 'findCustomByUserAndNameAndTransactionType').mockResolvedValueOnce(secondCategory)
 
-      await expect(service.edit(testCategoryIdentificationData, newCategoryName)).rejects.toThrowError(BadRequestException)
+      await expect(service.edit(testCategoryIdentificationData, categoryEditedData)).rejects.toThrowError(BadRequestException)
     })
   })
 
   describe('Edit default method', () => {
     it('should call categoryRepository.save method correctly edited name', async () => {
       vi.spyOn(service, 'findDefaultById').mockResolvedValueOnce(firstDefaultCategory)
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(null)
 
-      await service.editDefault(firstDefaultCategory.id, newCategoryName)
+      await service.editDefault(firstDefaultCategory.id, categoryEditedData)
 
       expect(repo.save).toHaveBeenCalledWith(editedDefaultCategory)
     })
@@ -302,14 +313,14 @@ describe('CategoryService', () => {
     it('should throw error if there is no such default category', async () => {
       vi.spyOn(service, 'findDefaultById').mockResolvedValueOnce(null)
 
-      await expect(service.editDefault(firstDefaultCategory.id, newCategoryName)).rejects.toThrowError(NotFoundException)
+      await expect(service.editDefault(firstDefaultCategory.id, categoryEditedData)).rejects.toThrowError(NotFoundException)
     })
 
     it('should throw error if default category with same name already exists', async () => {
       vi.spyOn(service, 'findDefaultById').mockResolvedValueOnce(firstDefaultCategory)
-      vi.spyOn(service, 'findDefaultByName').mockResolvedValueOnce(secondDefaultCategory)
+      vi.spyOn(service, 'findDefaultByNameAndTransactionType').mockResolvedValueOnce(secondDefaultCategory)
 
-      await expect(service.editDefault(firstDefaultCategory.id, newCategoryName)).rejects.toThrowError(BadRequestException)
+      await expect(service.editDefault(firstDefaultCategory.id, categoryEditedData)).rejects.toThrowError(BadRequestException)
     })
   })
 });
