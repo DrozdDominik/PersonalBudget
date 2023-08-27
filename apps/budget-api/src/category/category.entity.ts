@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "ty
 import { Transaction } from "../transaction/transaction.entity";
 import { User } from "../user/user.entity";
 import { CategoryId } from "./types";
+import { TransactionType } from "../transaction/types";
 
 @Entity()
 export class Category {
@@ -16,6 +17,12 @@ export class Category {
 
     @Column()
     isDefault: boolean
+
+    @Column({
+        type: "enum",
+        enum: TransactionType
+    })
+    transactionType: TransactionType
 
     @ManyToOne(() => User, user => user.categories, {onDelete: "CASCADE"})
     user: User

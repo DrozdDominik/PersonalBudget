@@ -2,12 +2,14 @@ import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException 
 import { InjectRepository } from "@nestjs/typeorm";
 import { Category } from "./category.entity";
 import { Repository } from "typeorm";
-import { CategoryNameDto } from "./dtos/category-name.dto";
+import { CategoryCreateDto } from "./dtos/category-create.dto";
 import { CategoryCreateData, CategoryId } from "./types";
 import { User } from "../user/user.entity";
 import { CustomCategoryIdentificationData } from "../types";
 import { TransactionService } from "../transaction/transaction.service";
 import { UserId } from "../user/types";
+import { TransactionType } from "../transaction/types";
+import { CategoryEditDto } from "./dtos/category-edit.dto";
 
 @Injectable()
 export class CategoryService {
@@ -17,19 +19,25 @@ export class CategoryService {
         @Inject(forwardRef( () => TransactionService)) private transactionService: TransactionService,
     ) {}
 
-    async findDefaultByName(name: string): Promise<Category | null> {
+    async findDefaultByNameAndTransactionType(name: string, transactionType: TransactionType): Promise<Category | null> {
         return await this.categoryRepository.findOne({
             where: {
                 name: name.toLowerCase(),
                 isDefault: true,
+                transactionType,
             }
         })
     }
 
-    async findCustomByUserAndName(name: string, userId: UserId):Promise<Category | null> {
+    async findCustomByUserAndNameAndTransactionType(
+        name: string,
+        transactionType:TransactionType,
+        userId: UserId
+    ):Promise<Category | null> {
         return await this.categoryRepository.findOne({
             where: {
                 name: name.toLowerCase(),
+                transactionType,
                 user: {
                     id: userId
                 }
@@ -80,8 +88,8 @@ export class CategoryService {
         })
     }
 
-    async createDefault(data: CategoryNameDto) {
-        const defaultCategory = await this.findDefaultByName(data.name)
+    async createDefault(data: CategoryCreateDto) {
+        const defaultCategory = await this.findDefaultByNameAndTransactionType(data.name, data.transactionType)
 
         if (defaultCategory) {
             throw new BadRequestException()
@@ -90,13 +98,17 @@ export class CategoryService {
         const newCategoryData: CategoryCreateData = {
             name: data.name.toLowerCase(),
             isDefault: true,
+            transactionType: data.transactionType,
             user: null,
         }
 
         const newDefaultCategory = this.categoryRepository.create(newCategoryData)
         const savedNewDefaultCategory = await this.categoryRepository.save(newDefaultCategory)
 
-        const customCategories = await this.getAllCustomByName(savedNewDefaultCategory.name)
+        const customCategories = await this.getAllCustomByNameAndTransactionType(
+            savedNewDefaultCategory.name,
+            savedNewDefaultCategory.transactionType
+        )
 
         if (customCategories.length > 0) {
             customCategories.map(async category => {
@@ -123,14 +135,18 @@ export class CategoryService {
         return savedNewDefaultCategory
     }
 
-    async create(data: CategoryNameDto, user: User) {
-        const defaultCategory = await this.findDefaultByName(data.name)
+    async create(data: CategoryCreateDto, user: User) {
+        const defaultCategory = await this.findDefaultByNameAndTransactionType(data.name, data.transactionType)
 
         if (defaultCategory) {
             throw new BadRequestException()
         }
 
-        const category = await this.findCustomByUserAndName(data.name, user.id)
+        const category = await this.findCustomByUserAndNameAndTransactionType(
+            data.name,
+            data.transactionType,
+            user.id
+        )
 
         if (category) {
             throw new BadRequestException()
@@ -139,6 +155,7 @@ export class CategoryService {
         const newCategoryData: CategoryCreateData = {
             name: data.name.toLowerCase(),
             isDefault: false,
+            transactionType: data.transactionType,
             user,
         }
 
@@ -171,7 +188,7 @@ export class CategoryService {
         return affected === 1
     }
 
-    async edit(identificationData: CustomCategoryIdentificationData, name: string) {
+    async edit(identificationData: CustomCategoryIdentificationData, dataToEdit: CategoryEditDto) {
         const {categoryId, userId} = identificationData
 
         const category = await this.findCustomById(categoryId,userId)
@@ -180,70 +197,98 @@ export class CategoryService {
             throw new NotFoundException()
         }
 
-        const exitsUserCategory = await this.findCustomByUserAndName(name, userId)
+       const transactionType = dataToEdit.transactionType ?? category.transactionType
 
-        if (exitsUserCategory) {
-            throw new BadRequestException(`User category ${name} already exits`)
-        }
+       const name = dataToEdit.name ?? category.name
 
-        category.name = name
+       const exitsUserCategory = await this.findCustomByUserAndNameAndTransactionType(
+           name,
+           transactionType,
+           userId
+       )
 
-        return await this.categoryRepository.save(category)
+       if (exitsUserCategory) {
+           throw new BadRequestException(`User ${transactionType} category ${name} already exits`)
+       }
+
+       category.name = name
+       category.transactionType = transactionType
+
+       return await this.categoryRepository.save(category)
     }
 
-    async editDefault(id: CategoryId, name: string) {
+    async editDefault(id: CategoryId, dataToEdit: CategoryEditDto) {
         const defaultCategory = await this.findDefaultById(id)
 
         if (!defaultCategory) {
             throw new NotFoundException()
         }
 
-        const exitsDefaultCategory = await this.findDefaultByName(name)
+        const transactionType = dataToEdit.transactionType ?? defaultCategory.transactionType
+
+        const name = dataToEdit.name ?? defaultCategory.name
+
+        const exitsDefaultCategory = await this.findDefaultByNameAndTransactionType(name, transactionType)
 
         if (exitsDefaultCategory) {
-            throw new BadRequestException(`Default category ${name} already exits`)
+            throw new BadRequestException(`Default ${transactionType} category ${name} already exits`)
         }
 
         defaultCategory.name = name
+        defaultCategory.transactionType = transactionType
 
         return await this.categoryRepository.save(defaultCategory)
     }
 
-    async getAll(userId: UserId): Promise<Category[]> {
+    async getAllForTransactionType(userId: UserId, transactionType: TransactionType): Promise<Category[]> {
         return await this.categoryRepository.find({
-            relations: {user: true},
-            where: {
+            relations: {
+                user: true
+            },
+            where:
+            {
                 user: {
                     id: userId
-                }
+                },
+                transactionType,
             }
         })
     }
 
-    async getAllDefault(): Promise<Category[]> {
+    async getAllDefaultForTransactionType(transactionType: TransactionType): Promise<Category[]> {
         return await this.categoryRepository.find({
             where: {
-                isDefault: true
+                isDefault: true,
+                transactionType,
             }
         })
     }
 
-    async getAllAvailable(userId: UserId): Promise<Category[]> {
+    async getAllAvailableForTransactionType(userId: UserId, transactionType: TransactionType): Promise<Category[]> {
         return await this.categoryRepository.find({
             relations: {user: true},
             where: [
-                {isDefault: true},
-                {user: {id: userId}}
+                {
+                    isDefault: true,
+                    transactionType,
+                },
+                {
+                    user: {
+                        id: userId
+                    },
+                    transactionType,
+                }
             ]
         })
     }
 
-    async getAllCustomByName(name: string): Promise<Category[]> {
+    async getAllCustomByNameAndTransactionType(name: string, transactionType: TransactionType): Promise<Category[]> {
         return await this.categoryRepository.find({
             relations: {user: true},
             where: {
                 name,
                 isDefault: false,
+                transactionType,
             }
         })
     }
