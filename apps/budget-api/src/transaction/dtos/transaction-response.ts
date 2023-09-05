@@ -1,6 +1,7 @@
 import { Expose, Transform } from "class-transformer";
 import { UserId } from "../../user/types";
 import { TransactionId, TransactionType } from "../types";
+import { BudgetId } from "../../budget/types";
 
 export class TransactionResponse {
     @Expose()
@@ -11,7 +12,7 @@ export class TransactionResponse {
 
     @Transform(({ obj }) => obj.category.name)
     @Expose()
-    name: string
+    category: string
 
     @Expose()
     amount: number
@@ -25,4 +26,8 @@ export class TransactionResponse {
     @Transform(({ obj }) => obj.user.id)
     @Expose()
     userId: UserId
+
+    @Transform(({ obj }) => obj.budget.id)
+    @Expose()
+    budgetId: BudgetId
 }

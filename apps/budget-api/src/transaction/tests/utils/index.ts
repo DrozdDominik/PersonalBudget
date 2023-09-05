@@ -4,6 +4,7 @@ import { User } from "../../../user/user.entity";
 import { Category } from "../../../category/category.entity";
 import { UserId } from "../../../user/types";
 import { TransactionId, TransactionType } from "../../types";
+import { Budget } from "../../../budget/budget.entity";
 
 
 export const transactionFactory = (quantity: number, type: TransactionType,  userId: UserId | null = null): Transaction[]  => {
@@ -26,6 +27,9 @@ export const transactionFactory = (quantity: number, type: TransactionType,  use
             user: {
                 id: userId ?? faker.string.uuid()
             } as User,
+            budget: {
+                id: faker.string.uuid()
+            } as Budget,
         }
 
         transactions.push(transaction)

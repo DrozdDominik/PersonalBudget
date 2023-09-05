@@ -2,6 +2,7 @@ import { IsDateString, IsNumber, IsUUID, Min, IsOptional, IsString, IsEnum } fro
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryId } from "../../category/types";
 import { TransactionType } from "../types";
+import { BudgetId } from "../../budget/types";
 
 export class CreateTransactionDto {
     @ApiProperty()
@@ -27,4 +28,8 @@ export class CreateTransactionDto {
     @IsOptional()
     @IsString()
     comment?: string
+
+    @ApiProperty()
+    @IsUUID()
+    budgetId: BudgetId;
 }

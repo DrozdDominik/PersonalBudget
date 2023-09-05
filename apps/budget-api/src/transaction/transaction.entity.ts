@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../user/user.entity";
 import { Category } from "../category/category.entity";
 import { TransactionId, TransactionType } from "./types";
+import { Budget } from "../budget/budget.entity";
 
 @Entity()
 export class Transaction {
@@ -40,4 +41,7 @@ export class Transaction {
 
     @ManyToOne(() => Category, category => category.transactions, {onDelete: "SET NULL"})
     category: Category
+
+    @ManyToOne( () => Budget, budget => budget.transactions, {onDelete: "CASCADE"})
+    budget: Budget
 }

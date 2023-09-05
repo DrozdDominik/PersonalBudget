@@ -1,7 +1,8 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn, JoinTable } from "typeorm";
 import { UserId, UserRole } from "./types";
 import { Transaction } from "../transaction/transaction.entity";
 import { Category } from "../category/category.entity";
+import { Budget } from "../budget/budget.entity";
 
 @Entity()
 export class User {
@@ -41,4 +42,11 @@ export class User {
 
     @OneToMany(() => Category, category => category.user )
     categories: Category[]
+
+    @OneToMany(() => Budget, budget => budget.owner )
+    ownBudgets: Budget[]
+
+    @ManyToMany(() => Budget, budget => budget.users )
+    @JoinTable()
+    sharedBudgets: Promise<Budget[]>
 }

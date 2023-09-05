@@ -1,0 +1,1 @@
+export type BudgetId = string & { __BudgetId__: void }
