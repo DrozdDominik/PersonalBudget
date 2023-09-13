@@ -24,7 +24,7 @@ export class TransactionService {
         @InjectRepository(Transaction)
         private transactionRepository: Repository<Transaction>,
         @Inject(forwardRef( () => CategoryService) ) private categoryService: CategoryService,
-        @Inject(forwardRef( () => BudgetService) ) private budgetService: BudgetService,
+        @Inject(BudgetService) private budgetService: BudgetService,
     ) {}
 
     async create(data: CreateTransactionDto, user: User): Promise<Transaction> {
@@ -97,6 +97,7 @@ export class TransactionService {
                 relations: {
                 user: true,
                 category: true,
+                budget: true,
                 }
             }
         )
@@ -119,13 +120,15 @@ export class TransactionService {
               relations: {
                   user: true,
                   category: true,
+                  budget: true,
               },
           })
            :
            await this.transactionRepository.find({
                relations: {
                    user: true,
-                   category: true
+                   category: true,
+                   budget: true,
                },
                where: {
                    user: {
@@ -139,7 +142,8 @@ export class TransactionService {
         return await this.transactionRepository.find({
             relations: {
                 user: true,
-                category: true
+                category: true,
+                budget: true,
             },
             where: {
                 user: {

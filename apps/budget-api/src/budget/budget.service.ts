@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ForbiddenException,
-  forwardRef,
   Inject,
   Injectable,
   NotFoundException,
@@ -11,7 +10,6 @@ import { Budget } from './budget.entity';
 import { Not, Repository } from 'typeorm';
 import { User } from '../user/user.entity';
 import { UserId, UserRole } from '../user/types';
-import { TransactionService } from '../transaction/transaction.service';
 import { BudgetId, BudgetWithUsers } from './types';
 import { UserService } from '../user/user.service';
 import {
@@ -25,8 +23,6 @@ export class BudgetService {
   constructor(
     @InjectRepository(Budget)
     private budgetRepository: Repository<Budget>,
-    @Inject(forwardRef(() => TransactionService))
-    private transactionService: TransactionService,
     @Inject(UserService) private userService: UserService,
   ) {}
 
