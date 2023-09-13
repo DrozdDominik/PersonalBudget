@@ -16,6 +16,7 @@ import { UserId, UserIdentificationData, UserRole } from "../user/types";
 import { CategoryService } from "../category/category.service";
 import { CategoryId } from "../category/types";
 import { TransactionId } from "./types";
+import { BudgetService } from "../budget/budget.service";
 
 @Injectable()
 export class TransactionService {
@@ -23,21 +24,33 @@ export class TransactionService {
         @InjectRepository(Transaction)
         private transactionRepository: Repository<Transaction>,
         @Inject(forwardRef( () => CategoryService) ) private categoryService: CategoryService,
+        @Inject(forwardRef( () => BudgetService) ) private budgetService: BudgetService,
     ) {}
 
     async create(data: CreateTransactionDto, user: User): Promise<Transaction> {
-        const { categoryId, ...transactionData} = data
+        const { categoryId, budgetId, ...transactionData} = data
+
+        const budget = await this.budgetService.checkUserAccessToBudget(budgetId, user.id)
+
+        if (!budget) {
+            throw new NotFoundException('There is no such budget')
+        }
 
         const category = await this.categoryService.findDefaultOrCustomByUserAndId(categoryId, user.id)
 
         if (!category) {
-            throw new BadRequestException()
+            throw new NotFoundException('There is no such category ')
+        }
+
+        if (category.transactionType !== data.type) {
+            throw new BadRequestException(`${category.name} is ${category.transactionType} category not ${data.type}`)
         }
 
         const transaction = this.transactionRepository.create(transactionData)
 
         transaction.user = user
         transaction.category = category
+        transaction.budget = budget
 
         return this.transactionRepository.save(transaction)
     }

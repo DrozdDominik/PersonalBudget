@@ -57,6 +57,28 @@ export class BudgetService {
     });
   }
 
+  async checkUserAccessToBudget(
+    id: BudgetId,
+    userId: UserId,
+  ): Promise<Budget | null> {
+    const budget = await this.findBudgetById(id);
+
+    if (!budget) {
+      return null;
+    }
+
+    const budgetUsers = await budget.users;
+
+    if (
+      budget.owner.id !== userId &&
+      !isUserAmongBudgetUsers(userId, budgetUsers)
+    ) {
+      return null;
+    }
+
+    return budget;
+  }
+
   async create(name: string, owner: User): Promise<Budget> {
     const newBudgetName = name.trim().toLowerCase();
     const existBudget = await this.findBudgetByOwnerAndName(
