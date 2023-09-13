@@ -1,15 +1,18 @@
 import {
   BadRequestException,
+  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './budget.entity';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
-import { UserId } from '../user/types';
+import { UserId, UserRole } from '../user/types';
 import { TransactionService } from '../transaction/transaction.service';
+import { BudgetId, BudgetWithUsers } from './types';
 import { UserService } from '../user/user.service';
 
 @Injectable()
@@ -36,6 +39,19 @@ export class BudgetService {
     });
   }
 
+  async findBudgetById(id: BudgetId): Promise<Budget | null> {
+    return await this.budgetRepository.findOne({
+      relations: {
+        owner: true,
+        users: true,
+        transactions: true,
+      },
+      where: {
+        id,
+      },
+    });
+  }
+
   async create(name: string, owner: User): Promise<Budget> {
     const newBudgetName = name.trim().toLowerCase();
     const existBudget = await this.findBudgetByOwnerAndName(
@@ -53,5 +69,25 @@ export class BudgetService {
     });
 
     return this.budgetRepository.save(budget);
+  }
+
+  async get(budgetId: BudgetId, user: User): Promise<BudgetWithUsers> {
+    const budget = await this.findBudgetById(budgetId);
+
+    if (!budget) {
+      throw new NotFoundException();
+    }
+    if (budget.owner.id !== user.id && user.role !== UserRole.Admin) {
+      throw new ForbiddenException();
+    }
+
+    const users = await budget.users;
+    return {
+      id: budget.id,
+      name: budget.name,
+      owner: budget.owner,
+      users,
+      transactions: budget.transactions,
+    };
   }
 }
