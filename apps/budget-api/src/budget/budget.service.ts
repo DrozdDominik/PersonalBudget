@@ -8,13 +8,17 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './budget.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { User } from '../user/user.entity';
 import { UserId, UserRole } from '../user/types';
 import { TransactionService } from '../transaction/transaction.service';
 import { BudgetId, BudgetWithUsers } from './types';
 import { UserService } from '../user/user.service';
-import { isUserAmongBudgetUsers } from './utils';
+import {
+  filterBudgetsBySharedUserId,
+  filterBudgetsByUserId,
+  isUserAmongBudgetUsers,
+} from './utils';
 
 @Injectable()
 export class BudgetService {
@@ -140,5 +144,86 @@ export class BudgetService {
       users: budgetUsers,
       transactions: budget.transactions,
     };
+  }
+
+  async getAllOwnBudgets(ownerId: UserId): Promise<BudgetWithUsers[]> {
+    const budgets = await this.budgetRepository.find({
+      relations: {
+        owner: true,
+        users: true,
+        transactions: true,
+      },
+      where: {
+        owner: {
+          id: ownerId,
+        },
+      },
+    });
+
+    return await Promise.all(
+      budgets.map(async (budget) => {
+        const users = await budget.users;
+        return {
+          id: budget.id,
+          name: budget.name,
+          owner: budget.owner,
+          users,
+          transactions: budget.transactions,
+        };
+      }),
+    );
+  }
+
+  async getAllSharedBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
+    const budgets = await this.budgetRepository.find({
+      relations: {
+        owner: true,
+        users: true,
+        transactions: true,
+      },
+      where: {
+        owner: Not(userId),
+      },
+    });
+
+    const budgetsWithUsers: BudgetWithUsers[] = await Promise.all(
+      budgets.map(async (budget) => {
+        const users = await budget.users;
+        return {
+          id: budget.id,
+          name: budget.name,
+          owner: budget.owner,
+          users,
+          transactions: budget.transactions,
+        };
+      }),
+    );
+
+    return filterBudgetsBySharedUserId(budgetsWithUsers, userId);
+  }
+
+  async getAllUserBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
+    const budgets = await this.budgetRepository.find({
+      relations: {
+        owner: true,
+        users: true,
+        transactions: true,
+      },
+    });
+
+    const budgetsWithUsers: BudgetWithUsers[] = await Promise.all(
+      budgets.map(async (budget) => {
+        const users = await budget.users;
+        return {
+          id: budget.id,
+          name: budget.name,
+          owner: budget.owner,
+          users,
+          transactions: budget.transactions,
+        };
+      }),
+    );
+
+    return filterBudgetsByUserId(budgetsWithUsers, userId);
   }
 }

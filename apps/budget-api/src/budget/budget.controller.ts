@@ -49,4 +49,25 @@ export class BudgetController {
   ): Promise<BudgetWithUsers> {
     return this.budgetService.addUser(data.budgetId, user.id, data.newUserId);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/owner/:id')
+  getAllOwnBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
+    return this.budgetService.getAllOwnBudgets(user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/shared/:id')
+  getAllSharedBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
+    return this.budgetService.getAllSharedBudgets(user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/user/:id')
+  getAllUserBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
+    return this.budgetService.getAllUserBudgets(user.id);
+  }
 }
