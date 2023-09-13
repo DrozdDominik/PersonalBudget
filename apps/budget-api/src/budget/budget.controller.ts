@@ -9,6 +9,10 @@ import {
 } from './dtos/create-budget.dto';
 import { Serialize } from '../interceptors/serialize.interceptor';
 import { Budget } from './budget.entity';
+import {
+  ShareBudgetDto,
+  ShareBudgetResponseDto,
+} from './dtos/share-budget-dto';
 import { GetBudgetDto } from './dtos/get-budget.dto';
 import { BudgetId, BudgetWithUsers } from './types';
 
@@ -34,5 +38,15 @@ export class BudgetController {
     @CurrentUser() user: User,
   ): Promise<BudgetWithUsers> {
     return this.budgetService.get(id, user);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(ShareBudgetResponseDto)
+  @Post('/share')
+  shareBudget(
+    @Body() data: ShareBudgetDto,
+    @CurrentUser() user: User,
+  ): Promise<BudgetWithUsers> {
+    return this.budgetService.addUser(data.budgetId, user.id, data.newUserId);
   }
 }

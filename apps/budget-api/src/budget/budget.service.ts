@@ -14,6 +14,7 @@ import { UserId, UserRole } from '../user/types';
 import { TransactionService } from '../transaction/transaction.service';
 import { BudgetId, BudgetWithUsers } from './types';
 import { UserService } from '../user/user.service';
+import { isUserAmongBudgetUsers } from './utils';
 
 @Injectable()
 export class BudgetService {
@@ -87,6 +88,56 @@ export class BudgetService {
       name: budget.name,
       owner: budget.owner,
       users,
+      transactions: budget.transactions,
+    };
+  }
+
+  async addUser(
+    budgetId: BudgetId,
+    ownerId: UserId,
+    newUserId: UserId,
+  ): Promise<BudgetWithUsers> {
+    const budget = await this.findBudgetById(budgetId);
+
+    if (!budget) {
+      throw new NotFoundException('budget');
+    }
+
+    if (budget.owner.id !== ownerId) {
+      throw new BadRequestException('Not your budget');
+    }
+
+    if (ownerId === newUserId) {
+      throw new BadRequestException('Cannot share budget with yourself');
+    }
+
+    const newUser = await this.userService.findOneById(newUserId);
+
+    if (!newUser) {
+      throw new NotFoundException('user');
+    }
+
+    const budgetUsers = await budget.users;
+
+    if (isUserAmongBudgetUsers(newUserId, budgetUsers)) {
+      throw new BadRequestException('Already have access');
+    }
+
+    budgetUsers.push(newUser);
+
+    budget.users = Promise.resolve(budgetUsers);
+
+    try {
+      await this.budgetRepository.save(budget);
+    } catch (e) {
+      throw new Error(e);
+    }
+
+    return {
+      id: budget.id,
+      name: budget.name,
+      owner: budget.owner,
+      users: budgetUsers,
       transactions: budget.transactions,
     };
   }
