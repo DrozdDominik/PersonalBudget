@@ -17,12 +17,20 @@ import { Transaction } from "../../transaction/transaction.entity";
 import { transactionFactory } from "../../transaction/tests/utils";
 import { TransactionType } from "../../transaction/types";
 import { CategoryEditDto } from "../dtos/category-edit.dto";
+import { BudgetService } from "../../budget/budget.service";
+import { UserService } from "../../user/user.service";
+import { Budget } from "../../budget/budget.entity";
 
 describe('CategoryService', () => {
   let service: CategoryService;
   let repo: Repository<Category>
   let transactionService: TransactionService;
   let transactionRepo: Repository<Transaction>
+  let budgetService: BudgetService
+  let budgetRepo: Repository<Budget>
+  let userService: UserService
+  let userRepo: Repository<User>
+
 
   const testData: CategoryCreateDto = {
     name: faker.word.noun(),
@@ -47,7 +55,7 @@ describe('CategoryService', () => {
     transactions: []
   }
 
-  const firstUser: User = {
+  const firstUser = {
     id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
@@ -56,7 +64,8 @@ describe('CategoryService', () => {
     role: UserRole.User,
     transactions: [],
     categories: [],
-  }
+    ownBudgets: [],
+  } as User
 
   const firstCategory: Category = {
     id: faker.string.uuid() as CategoryId,
@@ -101,6 +110,8 @@ describe('CategoryService', () => {
       providers: [
           CategoryService,
           TransactionService,
+          BudgetService,
+          UserService,
         {
           provide: getRepositoryToken(Category),
           useValue: {
@@ -120,6 +131,26 @@ describe('CategoryService', () => {
             find: vi.fn(),
           }
         },
+        {
+          provide: getRepositoryToken(Budget),
+          useValue: {
+            create: vi.fn(),
+            save: vi.fn(),
+            findOne: vi.fn(),
+            delete: vi.fn(),
+            find: vi.fn(),
+          }
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            create: vi.fn(),
+            save: vi.fn(),
+            findOne: vi.fn(),
+            delete: vi.fn(),
+            find: vi.fn(),
+          }
+        },
       ],
     }).compile();
 
@@ -130,6 +161,14 @@ describe('CategoryService', () => {
     transactionService = module.get<TransactionService>(TransactionService);
 
     transactionRepo = module.get<Repository<Transaction>>(getRepositoryToken(Transaction));
+
+    budgetService = module.get<BudgetService>(BudgetService)
+
+    budgetRepo = module.get<Repository<Budget>>(getRepositoryToken(Budget))
+
+    userService = module.get<UserService>(UserService)
+
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User))
   });
 
   it('should be defined', () => {

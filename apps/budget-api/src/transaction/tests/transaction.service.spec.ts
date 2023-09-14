@@ -15,14 +15,22 @@ import { Category } from "../../category/category.entity";
 import { CategoryService } from "../../category/category.service";
 import { CategoryId } from "../../category/types";
 import { TransactionType } from "../types";
+import { BudgetService } from "../../budget/budget.service";
+import { Budget } from "../../budget/budget.entity";
+import { UserService } from "../../user/user.service";
+import { BudgetId } from "../../budget/types";
 
 describe('TransactionService', () => {
   let service: TransactionService;
   let repo: Repository<Transaction>
   let categoryService: CategoryService
   let categoryRepo: Repository<Category>
+  let budgetService: BudgetService
+  let budgetRepo: Repository<Budget>
+  let userService: UserService
+  let userRepo: Repository<User>
 
-  const firstUser: User = {
+  const firstUser = {
     id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
@@ -31,9 +39,10 @@ describe('TransactionService', () => {
     role: UserRole.User,
     transactions: [],
     categories: [],
-  }
+    ownBudgets: [],
+  } as User
 
-  const admin: User = {
+  const admin = {
     id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
@@ -42,7 +51,8 @@ describe('TransactionService', () => {
     role: UserRole.Admin,
     transactions: [],
     categories: [],
-  }
+    ownBudgets: [],
+  } as User
 
   const [firstUserTransaction] = transactionFactory(1, TransactionType.INCOME, firstUser.id)
 
@@ -57,6 +67,7 @@ describe('TransactionService', () => {
     isDefault: false,
     user: firstUser,
     transactions: [],
+    transactionType: TransactionType.INCOME,
   }
 
   const firstUserIdentificationData: UserIdentificationData = {
@@ -101,6 +112,7 @@ describe('TransactionService', () => {
     isDefault: false,
     user: firstUser,
     transactions: [],
+    transactionType: TransactionType.INCOME,
   }
 
   const transactionData: CreateTransactionDto = {
@@ -108,6 +120,15 @@ describe('TransactionService', () => {
     categoryId: faker.string.uuid() as CategoryId,
     amount: Number(faker.finance.amount(0, 1000000, 2)),
     date: faker.date.anytime({refDate: '18-06-2023'}),
+    budgetId: faker.string.uuid() as BudgetId,
+  }
+
+  const firstUserBudget: Budget = {
+    id:  faker.string.uuid() as BudgetId,
+    name: faker.word.noun(),
+    owner: firstUser,
+    transactions: [],
+    users: Promise.resolve([])
   }
 
   beforeEach(async () => {
@@ -115,6 +136,8 @@ describe('TransactionService', () => {
       providers: [
           TransactionService,
           CategoryService,
+          BudgetService,
+          UserService,
         {
           provide: getRepositoryToken(Transaction),
           useValue: {
@@ -131,6 +154,18 @@ describe('TransactionService', () => {
             findOne: vi.fn(),
           }
         },
+        {
+          provide: getRepositoryToken(Budget),
+          useValue: {
+            findOne: vi.fn(),
+          }
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            findOne: vi.fn(),
+          }
+        },
       ],
     }).compile();
 
@@ -141,6 +176,14 @@ describe('TransactionService', () => {
     categoryService = module.get<CategoryService>(CategoryService)
 
     categoryRepo = module.get<Repository<Category>>(getRepositoryToken(Category))
+
+    budgetService = module.get<BudgetService>(BudgetService)
+
+    budgetRepo = module.get<Repository<Budget>>(getRepositoryToken(Budget))
+
+    userService = module.get<UserService>(UserService)
+
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User))
   });
 
   it('should be defined', () => {
@@ -197,7 +240,8 @@ describe('TransactionService', () => {
         date: transactionData.date,
         comment: undefined,
         id: undefined,
-        user: undefined
+        user: undefined,
+        budget: firstUserBudget
       }
 
       const transactionToSave = {
@@ -207,16 +251,24 @@ describe('TransactionService', () => {
 
       vi.spyOn(repo, 'create').mockReturnValueOnce(createdTransaction)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(category)
+      vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(firstUserBudget)
 
       await service.create(transactionData, firstUser)
 
       expect(repo.save).toHaveBeenCalledWith(transactionToSave)
     })
 
+    it('should throw error if budget not exists', async () => {
+      vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(null)
+
+      await expect(service.create(transactionData, firstUser)).rejects.toThrowError(NotFoundException)
+    })
+
     it('should throw error if category not exists', async () => {
+      vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(firstUserBudget)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
 
-      await expect(service.create(transactionData, firstUser)).rejects.toThrowError(BadRequestException)
+      await expect(service.create(transactionData, firstUser)).rejects.toThrowError(NotFoundException)
     })
   })
 
@@ -296,6 +348,7 @@ describe('TransactionService', () => {
         relations: {
           user: true,
           category: true,
+          budget: true,
         },
         where: {
           user: {
@@ -314,6 +367,7 @@ describe('TransactionService', () => {
         relations: {
           user: true,
           category: true,
+          budget: true,
         }
       }
 

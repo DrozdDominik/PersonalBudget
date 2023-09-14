@@ -7,6 +7,10 @@ import { Category } from "../category.entity";
 import { Repository } from "typeorm";
 import { Transaction } from "../../transaction/transaction.entity";
 import { TransactionService } from "../../transaction/transaction.service";
+import { BudgetService } from "../../budget/budget.service";
+import { UserService } from "../../user/user.service";
+import { Budget } from "../../budget/budget.entity";
+import { User } from "../../user/user.entity";
 
 describe('CategoryController', () => {
   let controller: CategoryController;
@@ -15,14 +19,24 @@ describe('CategoryController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CategoryController],
       providers: [
-        CategoryService,
-        TransactionService,
+          CategoryService,
+          TransactionService,
+          BudgetService,
+          UserService,
         {
           provide: getRepositoryToken(Category),
           useClass: Repository,
         },
         {
           provide: getRepositoryToken(Transaction),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Budget),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(User),
           useClass: Repository,
         },
       ],
