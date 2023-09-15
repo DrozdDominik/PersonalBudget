@@ -1,15 +1,15 @@
 import { IsNotEmpty, IsString } from "class-validator";
-import { Expose, Transform } from "class-transformer";
-import { BudgetId } from "../types";
-import { UserId } from "../../user/types";
+import {Expose, Transform} from "class-transformer";
+import {BudgetId} from "../types";
+import {UserId} from "../../user/types";
 
-export class CreateBudgetDto {
+export class EditBudgetNameDto {
     @IsString()
     @IsNotEmpty()
     name: string;
 }
 
-export class CreateBudgetResponseDto {
+export class EditBudgetResponseDto {
     @Expose()
     id: BudgetId
 

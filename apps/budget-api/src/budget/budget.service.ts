@@ -244,4 +244,22 @@ export class BudgetService {
 
     return filterBudgetsByUserId(budgetsWithUsers, userId);
   }
+
+  async editName(id: BudgetId, ownerId: UserId, newName: string ):Promise<Budget> {
+    const budgetWithSameName = await this.findBudgetByOwnerAndName(newName, ownerId)
+
+    if (!!budgetWithSameName) {
+      throw new BadRequestException('There is already budget with this name')
+    }
+
+    const budget = await this.findBudgetById(id)
+
+    if (!budget) {
+      throw new NotFoundException('Budget not found')
+    }
+
+    budget.name = newName
+
+    return await this.budgetRepository.save(budget)
+  }
 }
