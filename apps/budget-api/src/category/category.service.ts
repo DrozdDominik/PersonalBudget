@@ -136,17 +136,11 @@ export class CategoryService {
         )
       })
 
-      const deleteResult = await Promise.all(
+      await Promise.all(
         customCategories.map(async category => {
           return this.delete(category.id, category.user.id)
         }),
       )
-
-      const isAllDeleted = deleteResult.filter(result => !result).length === 0
-
-      if (!isAllDeleted) {
-        throw new Error('Deleting categories went wrong...')
-      }
     }
 
     return savedNewDefaultCategory
@@ -183,28 +177,32 @@ export class CategoryService {
     return this.categoryRepository.save(newCategory)
   }
 
-  async delete(id: CategoryId, userId: UserId) {
+  async delete(id: CategoryId, userId: UserId): Promise<void> {
     const category = await this.findCustomById(id, userId)
 
     if (!category) {
       throw new NotFoundException()
     }
 
-    const { affected } = await this.categoryRepository.delete(category.id)
-
-    return affected === 1
+    try {
+      await this.categoryRepository.delete(category.id)
+    } catch {
+      throw new Error(`Delete category ${category.id} failed`)
+    }
   }
 
-  async deleteDefault(id: CategoryId) {
+  async deleteDefault(id: CategoryId): Promise<void> {
     const defaultCategory = await this.findDefaultById(id)
 
     if (!defaultCategory) {
       throw new NotFoundException()
     }
 
-    const { affected } = await this.categoryRepository.delete(defaultCategory.id)
-
-    return affected === 1
+    try {
+      await this.categoryRepository.delete(defaultCategory.id)
+    } catch {
+      throw new Error(`Delete category ${defaultCategory.id} failed`)
+    }
   }
 
   async edit(identificationData: CustomCategoryIdentificationData, dataToEdit: CategoryEditDto) {

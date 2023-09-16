@@ -85,12 +85,14 @@ export class TransactionService {
     return this.transactionRepository.save(transaction)
   }
 
-  async delete(id: TransactionId, user: UserIdentificationData): Promise<boolean> {
+  async delete(id: TransactionId, user: UserIdentificationData): Promise<void> {
     const transaction = await this.getOne(id, user)
 
-    const { affected } = await this.transactionRepository.delete(transaction.id)
-
-    return affected === 1
+    try {
+      await this.transactionRepository.delete(transaction.id)
+    } catch {
+      throw new Error(`Delete transaction ${transaction.id} failed`)
+    }
   }
 
   async getOne(id: TransactionId, user: UserIdentificationData): Promise<Transaction> {

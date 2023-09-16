@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { CategoryService } from './category.service'
 import { AuthGuard } from '@nestjs/passport'
 import { AdminGuard } from '../guards/AdminGuard'
@@ -29,6 +40,7 @@ export class CategoryController {
 
   @UseGuards(AuthGuard('jwt'), AdminGuard)
   @Delete('/default/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   deleteDefault(@Param('id') id: CategoryId) {
     return this.categoryService.deleteDefault(id)
   }
@@ -63,6 +75,7 @@ export class CategoryController {
 
   @UseGuards(AuthGuard('jwt'))
   @Delete('/custom/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id') id: CategoryId, @CurrentUser() user: User) {
     return this.categoryService.delete(id, user.id)
   }

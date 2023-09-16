@@ -108,7 +108,7 @@ export class UserService {
     try {
       await this.usersRepository.delete(user.id)
     } catch {
-      throw new Error('Delete operation failed')
+      throw new Error(`Delete user ${user.id} failed`)
     }
   }
 

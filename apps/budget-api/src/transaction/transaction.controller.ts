@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { TransactionService } from './transaction.service'
 import { Transaction } from './transaction.entity'
 import { CreateTransactionDto } from './dtos/create-transaction.dto'
@@ -46,7 +57,8 @@ export class TransactionController {
 
   @UseGuards(AuthGuard('jwt'))
   @Delete('/:id')
-  deleteTransaction(@Param('id') id: TransactionId, @CurrentUser() user: User): Promise<boolean> {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteTransaction(@Param('id') id: TransactionId, @CurrentUser() user: User): Promise<void> {
     const userData: UserIdentificationData = {
       id: user.id,
       role: user.role,
