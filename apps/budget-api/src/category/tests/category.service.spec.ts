@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CategoryService } from '../category.service'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CategoryController } from '../category.controller'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Category } from '../category.entity'
@@ -170,6 +170,11 @@ describe('CategoryService', () => {
     userRepo = module.get<Repository<User>>(getRepositoryToken(User))
   })
 
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.resetAllMocks()
+  })
+
   it('should be defined', () => {
     expect(service).toBeDefined()
   })
@@ -213,7 +218,9 @@ describe('CategoryService', () => {
         firstCategory,
       ])
       vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValueOnce([])
-      vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
+      vi.spyOn(service, 'findCustomById').mockResolvedValueOnce(firstDefaultCategory)
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
+      vi.spyOn(service, 'delete')
 
       await service.createDefault(testData)
 
@@ -229,7 +236,8 @@ describe('CategoryService', () => {
         secondCategory,
       ])
       vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValue([])
-      vi.spyOn(service, 'delete').mockResolvedValue(true)
+      vi.spyOn(service, 'findCustomById').mockResolvedValue(firstDefaultCategory)
+      vi.spyOn(service, 'delete')
 
       await service.createDefault(testData)
 
@@ -245,7 +253,8 @@ describe('CategoryService', () => {
         firstCategory,
       ])
       vi.spyOn(transactionService, 'getAllByCategory').mockResolvedValueOnce(transactionsArr)
-      vi.spyOn(service, 'delete').mockResolvedValueOnce(true)
+      vi.spyOn(service, 'findCustomById').mockResolvedValue(firstDefaultCategory)
+      vi.spyOn(service, 'delete')
       vi.spyOn(transactionService, 'save')
 
       const lastTransaction = transactionsArr.at(-1)
