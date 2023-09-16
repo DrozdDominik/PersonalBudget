@@ -1,27 +1,27 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TransactionService } from '../transaction.service';
-import { describe, beforeEach, it, expect, vi } from 'vitest'
-import { Repository } from "typeorm";
-import { Transaction } from "../transaction.entity";
-import { getRepositoryToken } from "@nestjs/typeorm";
-import { CreateTransactionDto } from "../dtos/create-transaction.dto";
-import { faker } from "@faker-js/faker";
-import { User } from "../../user/user.entity";
-import { UserId, UserIdentificationData, UserRole } from "../../user/types";
-import { TransactionIdentificationData } from "../../types";
-import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
-import { transactionFactory } from "./utils";
-import { Category } from "../../category/category.entity";
-import { CategoryService } from "../../category/category.service";
-import { CategoryId } from "../../category/types";
-import { TransactionType } from "../types";
-import { BudgetService } from "../../budget/budget.service";
-import { Budget } from "../../budget/budget.entity";
-import { UserService } from "../../user/user.service";
-import { BudgetId } from "../../budget/types";
+import { Test, TestingModule } from '@nestjs/testing'
+import { TransactionService } from '../transaction.service'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { Repository } from 'typeorm'
+import { Transaction } from '../transaction.entity'
+import { getRepositoryToken } from '@nestjs/typeorm'
+import { CreateTransactionDto } from '../dtos/create-transaction.dto'
+import { faker } from '@faker-js/faker'
+import { User } from '../../user/user.entity'
+import { UserId, UserIdentificationData, UserRole } from '../../user/types'
+import { TransactionIdentificationData } from '../../types'
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common'
+import { transactionFactory } from './utils'
+import { Category } from '../../category/category.entity'
+import { CategoryService } from '../../category/category.service'
+import { CategoryId } from '../../category/types'
+import { TransactionType } from '../types'
+import { BudgetService } from '../../budget/budget.service'
+import { Budget } from '../../budget/budget.entity'
+import { UserService } from '../../user/user.service'
+import { BudgetId } from '../../budget/types'
 
 describe('TransactionService', () => {
-  let service: TransactionService;
+  let service: TransactionService
   let repo: Repository<Transaction>
   let categoryService: CategoryService
   let categoryRepo: Repository<Category>
@@ -58,7 +58,7 @@ describe('TransactionService', () => {
 
   const editedData: Partial<CreateTransactionDto> = {
     categoryId: faker.string.uuid() as CategoryId,
-    amount: Number(faker.finance.amount(0, 1000000, 2))
+    amount: Number(faker.finance.amount(0, 1000000, 2)),
   }
 
   const editedCategory: Category = {
@@ -72,7 +72,7 @@ describe('TransactionService', () => {
 
   const firstUserIdentificationData: UserIdentificationData = {
     id: firstUser.id,
-    role: firstUser.role
+    role: firstUser.role,
   }
 
   const secondUserIdentificationData: UserIdentificationData = {
@@ -82,28 +82,28 @@ describe('TransactionService', () => {
 
   const adminIdentificationData: UserIdentificationData = {
     id: admin.id,
-    role: admin.role
+    role: admin.role,
   }
 
   const firstTransactionIdentificationData: TransactionIdentificationData = {
     transactionId: firstUserTransaction.id,
-    user: firstUserIdentificationData
+    user: firstUserIdentificationData,
   }
 
   const secondTransactionIdentificationData: TransactionIdentificationData = {
     transactionId: firstUserTransaction.id,
-    user: secondUserIdentificationData
+    user: secondUserIdentificationData,
   }
 
   const adminTransactionIdentificationData: TransactionIdentificationData = {
     transactionId: firstUserTransaction.id,
-    user: adminIdentificationData
+    user: adminIdentificationData,
   }
 
   const editedTransaction: Transaction = {
     ...firstUserTransaction,
     category: editedCategory,
-    amount: editedData.amount
+    amount: editedData.amount,
   }
 
   const category: Category = {
@@ -119,25 +119,25 @@ describe('TransactionService', () => {
     type: TransactionType.INCOME,
     categoryId: faker.string.uuid() as CategoryId,
     amount: Number(faker.finance.amount(0, 1000000, 2)),
-    date: faker.date.anytime({refDate: '18-06-2023'}),
+    date: faker.date.anytime({ refDate: '18-06-2023' }),
     budgetId: faker.string.uuid() as BudgetId,
   }
 
   const firstUserBudget: Budget = {
-    id:  faker.string.uuid() as BudgetId,
+    id: faker.string.uuid() as BudgetId,
     name: faker.word.noun(),
     owner: firstUser,
     transactions: [],
-    users: Promise.resolve([])
+    users: Promise.resolve([]),
   }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-          TransactionService,
-          CategoryService,
-          BudgetService,
-          UserService,
+        TransactionService,
+        CategoryService,
+        BudgetService,
+        UserService,
         {
           provide: getRepositoryToken(Transaction),
           useValue: {
@@ -146,32 +146,32 @@ describe('TransactionService', () => {
             findOne: vi.fn(),
             delete: vi.fn(),
             find: vi.fn(),
-          }
+          },
         },
         {
           provide: getRepositoryToken(Category),
           useValue: {
             findOne: vi.fn(),
-          }
+          },
         },
         {
           provide: getRepositoryToken(Budget),
           useValue: {
             findOne: vi.fn(),
-          }
+          },
         },
         {
           provide: getRepositoryToken(User),
           useValue: {
             findOne: vi.fn(),
-          }
+          },
         },
       ],
-    }).compile();
+    }).compile()
 
-    service = module.get<TransactionService>(TransactionService);
+    service = module.get<TransactionService>(TransactionService)
 
-    repo = module.get<Repository<Transaction>>(getRepositoryToken(Transaction));
+    repo = module.get<Repository<Transaction>>(getRepositoryToken(Transaction))
 
     categoryService = module.get<CategoryService>(CategoryService)
 
@@ -184,16 +184,18 @@ describe('TransactionService', () => {
     userService = module.get<UserService>(UserService)
 
     userRepo = module.get<Repository<User>>(getRepositoryToken(User))
-  });
+  })
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+    expect(service).toBeDefined()
+  })
 
   describe('Edit method', () => {
     it('should call transactionRepository.save method with correctly edited data', async () => {
       vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserTransaction)
-      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(
+        editedCategory,
+      )
 
       await service.edit(firstTransactionIdentificationData, editedData)
 
@@ -203,25 +205,33 @@ describe('TransactionService', () => {
     it('should throw error if transaction not exists', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
 
-      await expect( service.edit(firstTransactionIdentificationData, editedData) ).rejects.toThrowError(NotFoundException)
+      await expect(
+        service.edit(firstTransactionIdentificationData, editedData),
+      ).rejects.toThrowError(NotFoundException)
     })
 
     it('should throw error if edited category not exists', async () => {
       vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserTransaction)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
 
-      await expect( service.edit(firstTransactionIdentificationData, editedData) ).rejects.toThrowError(BadRequestException)
+      await expect(
+        service.edit(firstTransactionIdentificationData, editedData),
+      ).rejects.toThrowError(BadRequestException)
     })
 
     it('should throw error if transaction belongs to another user', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserTransaction)
 
-      await expect( service.edit(secondTransactionIdentificationData, editedData) ).rejects.toThrowError(ForbiddenException)
+      await expect(
+        service.edit(secondTransactionIdentificationData, editedData),
+      ).rejects.toThrowError(ForbiddenException)
     })
 
     it('should not throw error if admin edit transaction belongs to another user', async () => {
       vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserTransaction)
-      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(editedCategory)
+      vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(
+        editedCategory,
+      )
 
       await service.edit(adminTransactionIdentificationData, editedData)
 
@@ -241,7 +251,7 @@ describe('TransactionService', () => {
         comment: undefined,
         id: undefined,
         user: undefined,
-        budget: firstUserBudget
+        budget: firstUserBudget,
       }
 
       const transactionToSave = {
@@ -261,21 +271,25 @@ describe('TransactionService', () => {
     it('should throw error if budget not exists', async () => {
       vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(null)
 
-      await expect(service.create(transactionData, firstUser)).rejects.toThrowError(NotFoundException)
+      await expect(service.create(transactionData, firstUser)).rejects.toThrowError(
+        NotFoundException,
+      )
     })
 
     it('should throw error if category not exists', async () => {
       vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(firstUserBudget)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
 
-      await expect(service.create(transactionData, firstUser)).rejects.toThrowError(NotFoundException)
+      await expect(service.create(transactionData, firstUser)).rejects.toThrowError(
+        NotFoundException,
+      )
     })
   })
 
   describe('Delete method', () => {
     it('should call transactionRepository.delete method with correct transaction id', async () => {
       vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserTransaction)
-      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
 
       await service.delete(firstUserTransaction.id, firstUserIdentificationData)
 
@@ -285,21 +299,25 @@ describe('TransactionService', () => {
     it('should throw error if transaction not exists', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
 
-      await expect( service.delete(firstUserTransaction.id, firstUserIdentificationData) ).rejects.toThrowError(NotFoundException)
+      await expect(
+        service.delete(firstUserTransaction.id, firstUserIdentificationData),
+      ).rejects.toThrowError(NotFoundException)
     })
 
     it('should throw error if transaction belongs to another user', async () => {
       const secondUserId = faker.string.uuid() as UserId
-      const [ secondUserTransaction ] = transactionFactory(1, TransactionType.INCOME, secondUserId)
+      const [secondUserTransaction] = transactionFactory(1, TransactionType.INCOME, secondUserId)
 
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(secondUserTransaction)
 
-      await expect( service.delete(secondUserTransaction.id, firstUserIdentificationData) ).rejects.toThrowError(ForbiddenException)
+      await expect(
+        service.delete(secondUserTransaction.id, firstUserIdentificationData),
+      ).rejects.toThrowError(ForbiddenException)
     })
 
     it('should not throw error if admin delete transaction belongs to another user', async () => {
       vi.spyOn(service, 'getOne').mockResolvedValueOnce(firstUserTransaction)
-      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
 
       await service.delete(firstUserTransaction.id, adminIdentificationData)
 
@@ -314,7 +332,7 @@ describe('TransactionService', () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserTransaction)
       vi.spyOn(categoryRepo, 'findOne').mockResolvedValueOnce(category)
 
-     const transaction = await service.getOne(firstUserTransaction.id, firstUserIdentificationData)
+      const transaction = await service.getOne(firstUserTransaction.id, firstUserIdentificationData)
 
       expect(transaction).toEqual(firstUserTransaction)
     })
@@ -322,13 +340,17 @@ describe('TransactionService', () => {
     it('should throw error if transaction not exists', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(null)
 
-      await expect( service.getOne(firstUserTransaction.id, firstUserIdentificationData) ).rejects.toThrowError(NotFoundException)
+      await expect(
+        service.getOne(firstUserTransaction.id, firstUserIdentificationData),
+      ).rejects.toThrowError(NotFoundException)
     })
 
     it('should throw error if transaction belongs to another user', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserTransaction)
 
-      await expect( service.getOne(firstUserTransaction.id, secondUserIdentificationData) ).rejects.toThrowError(ForbiddenException)
+      await expect(
+        service.getOne(firstUserTransaction.id, secondUserIdentificationData),
+      ).rejects.toThrowError(ForbiddenException)
     })
 
     it('should not throw error if admin get transaction belongs to another user', async () => {
@@ -352,9 +374,9 @@ describe('TransactionService', () => {
         },
         where: {
           user: {
-            id: firstUser.id
-          }
-        }
+            id: firstUser.id,
+          },
+        },
       }
 
       await service.getAll(firstUserIdentificationData)
@@ -368,7 +390,7 @@ describe('TransactionService', () => {
           user: true,
           category: true,
           budget: true,
-        }
+        },
       }
 
       await service.getAll(adminIdentificationData)
@@ -376,4 +398,4 @@ describe('TransactionService', () => {
       expect(repo.find).toHaveBeenCalledWith(optionsForAdmin)
     })
   })
-});
+})

@@ -4,19 +4,20 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Budget } from './budget.entity';
-import { Not, Repository } from 'typeorm';
-import { User } from '../user/user.entity';
-import { UserId, UserRole } from '../user/types';
-import { BudgetId, BudgetWithUsers } from './types';
-import { UserService } from '../user/user.service';
+} from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Budget } from './budget.entity'
+import { Not, Repository } from 'typeorm'
+import { User } from '../user/user.entity'
+import { UserId, UserRole } from '../user/types'
+import { BudgetId, BudgetWithUsers } from './types'
+import { UserService } from '../user/user.service'
 import {
+  deleteUserFromBudgetUsers,
   filterBudgetsBySharedUserId,
   filterBudgetsByUserId,
   isUserAmongBudgetUsers,
-} from './utils';
+} from './utils'
 
 @Injectable()
 export class BudgetService {
@@ -26,10 +27,7 @@ export class BudgetService {
     @Inject(UserService) private userService: UserService,
   ) {}
 
-  async findBudgetByOwnerAndName(
-    name: string,
-    ownerId: UserId,
-  ): Promise<Budget | null> {
+  async findBudgetByOwnerAndName(name: string, ownerId: UserId): Promise<Budget | null> {
     return await this.budgetRepository.findOne({
       where: {
         name,
@@ -37,7 +35,7 @@ export class BudgetService {
           id: ownerId,
         },
       },
-    });
+    })
   }
 
   async findBudgetById(id: BudgetId): Promise<Budget | null> {
@@ -50,109 +48,107 @@ export class BudgetService {
       where: {
         id,
       },
-    });
+    })
   }
 
-  async checkUserAccessToBudget(
-    id: BudgetId,
-    userId: UserId,
-  ): Promise<Budget | null> {
-    const budget = await this.findBudgetById(id);
+  async findBudgetByIdAndOwner(id: BudgetId, ownerId: UserId): Promise<Budget | null> {
+    return await this.budgetRepository.findOne({
+      where: {
+        id,
+        owner: {
+          id: ownerId,
+        },
+      },
+    })
+  }
+
+  async checkUserAccessToBudget(id: BudgetId, userId: UserId): Promise<Budget | null> {
+    const budget = await this.findBudgetById(id)
 
     if (!budget) {
-      return null;
+      return null
     }
 
-    const budgetUsers = await budget.users;
+    const budgetUsers = await budget.users
 
-    if (
-      budget.owner.id !== userId &&
-      !isUserAmongBudgetUsers(userId, budgetUsers)
-    ) {
-      return null;
+    if (budget.owner.id !== userId && !isUserAmongBudgetUsers(userId, budgetUsers)) {
+      return null
     }
 
-    return budget;
+    return budget
   }
 
   async create(name: string, owner: User): Promise<Budget> {
-    const newBudgetName = name.trim().toLowerCase();
-    const existBudget = await this.findBudgetByOwnerAndName(
-      newBudgetName,
-      owner.id,
-    );
+    const newBudgetName = name.trim().toLowerCase()
+    const existBudget = await this.findBudgetByOwnerAndName(newBudgetName, owner.id)
 
     if (existBudget) {
-      throw new BadRequestException();
+      throw new BadRequestException()
     }
 
     const budget = this.budgetRepository.create({
       name: newBudgetName,
       owner,
-    });
+    })
 
-    return this.budgetRepository.save(budget);
+    return this.budgetRepository.save(budget)
   }
 
   async get(budgetId: BudgetId, user: User): Promise<BudgetWithUsers> {
-    const budget = await this.findBudgetById(budgetId);
+    const budget = await this.findBudgetById(budgetId)
 
     if (!budget) {
-      throw new NotFoundException();
+      throw new NotFoundException()
     }
     if (budget.owner.id !== user.id && user.role !== UserRole.Admin) {
-      throw new ForbiddenException();
+      throw new ForbiddenException()
     }
 
-    const users = await budget.users;
+    const users = await budget.users
     return {
       id: budget.id,
       name: budget.name,
       owner: budget.owner,
       users,
       transactions: budget.transactions,
-    };
+    }
   }
 
-  async addUser(
-    budgetId: BudgetId,
-    ownerId: UserId,
-    newUserId: UserId,
-  ): Promise<BudgetWithUsers> {
-    const budget = await this.findBudgetById(budgetId);
+  async addUser(budgetId: BudgetId, ownerId: UserId, newUserId: UserId): Promise<BudgetWithUsers> {
+    const budget = await this.findBudgetById(budgetId)
 
     if (!budget) {
-      throw new NotFoundException('budget');
+      throw new NotFoundException('budget')
     }
 
     if (budget.owner.id !== ownerId) {
-      throw new BadRequestException('Not your budget');
+      throw new BadRequestException('Not your budget')
     }
 
     if (ownerId === newUserId) {
-      throw new BadRequestException('Cannot share budget with yourself');
+      throw new BadRequestException('Cannot share budget with yourself')
     }
 
-    const newUser = await this.userService.findOneById(newUserId);
+    const newUser = await this.userService.findOneById(newUserId)
 
     if (!newUser) {
-      throw new NotFoundException('user');
+      throw new NotFoundException('user')
     }
 
-    const budgetUsers = await budget.users;
+    const budgetUsers = await budget.users
 
     if (isUserAmongBudgetUsers(newUserId, budgetUsers)) {
-      throw new BadRequestException('Already have access');
+      throw new BadRequestException('Already have access')
     }
 
-    budgetUsers.push(newUser);
+    budgetUsers.push(newUser)
 
-    budget.users = Promise.resolve(budgetUsers);
+    budget.users = Promise.resolve(budgetUsers)
 
     try {
-      await this.budgetRepository.save(budget);
+      await this.budgetRepository.save(budget)
     } catch (e) {
-      throw new Error(e);
+      throw new Error(e)
     }
 
     return {
@@ -161,7 +157,7 @@ export class BudgetService {
       owner: budget.owner,
       users: budgetUsers,
       transactions: budget.transactions,
-    };
+    }
   }
 
   async getAllOwnBudgets(ownerId: UserId): Promise<BudgetWithUsers[]> {
@@ -176,20 +172,20 @@ export class BudgetService {
           id: ownerId,
         },
       },
-    });
+    })
 
     return await Promise.all(
-      budgets.map(async (budget) => {
-        const users = await budget.users;
+      budgets.map(async budget => {
+        const users = await budget.users
         return {
           id: budget.id,
           name: budget.name,
           owner: budget.owner,
           users,
           transactions: budget.transactions,
-        };
+        }
       }),
-    );
+    )
   }
 
   async getAllSharedBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
@@ -202,22 +198,22 @@ export class BudgetService {
       where: {
         owner: Not(userId),
       },
-    });
+    })
 
     const budgetsWithUsers: BudgetWithUsers[] = await Promise.all(
-      budgets.map(async (budget) => {
-        const users = await budget.users;
+      budgets.map(async budget => {
+        const users = await budget.users
         return {
           id: budget.id,
           name: budget.name,
           owner: budget.owner,
           users,
           transactions: budget.transactions,
-        };
+        }
       }),
-    );
+    )
 
-    return filterBudgetsBySharedUserId(budgetsWithUsers, userId);
+    return filterBudgetsBySharedUserId(budgetsWithUsers, userId)
   }
 
   async getAllUserBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
@@ -227,25 +223,25 @@ export class BudgetService {
         users: true,
         transactions: true,
       },
-    });
+    })
 
     const budgetsWithUsers: BudgetWithUsers[] = await Promise.all(
-      budgets.map(async (budget) => {
-        const users = await budget.users;
+      budgets.map(async budget => {
+        const users = await budget.users
         return {
           id: budget.id,
           name: budget.name,
           owner: budget.owner,
           users,
           transactions: budget.transactions,
-        };
+        }
       }),
-    );
+    )
 
-    return filterBudgetsByUserId(budgetsWithUsers, userId);
+    return filterBudgetsByUserId(budgetsWithUsers, userId)
   }
 
-  async editName(id: BudgetId, ownerId: UserId, newName: string ):Promise<Budget> {
+  async editName(id: BudgetId, ownerId: UserId, newName: string): Promise<Budget> {
     const budgetWithSameName = await this.findBudgetByOwnerAndName(newName, ownerId)
 
     if (!!budgetWithSameName) {

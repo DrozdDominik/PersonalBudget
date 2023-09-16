@@ -1,21 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { UserService } from '../user.service';
-import { User } from "../user.entity";
-import { faker } from "@faker-js/faker";
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { RegisterUserDto } from "../dtos/register-user.dto";
-import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
-import * as utils from "../../utils";
-import { UserId, UserIdentificationData, UserRole } from "../types";
-import { EditUserDto } from "../dtos/edit-user.dto";
+import { UserService } from '../user.service'
+import { User } from '../user.entity'
+import { faker } from '@faker-js/faker'
+import { getRepositoryToken } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { RegisterUserDto } from '../dtos/register-user.dto'
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common'
+import * as utils from '../../utils'
+import { UserId, UserIdentificationData, UserRole } from '../types'
+import { EditUserDto } from '../dtos/edit-user.dto'
 
 describe('UsersService', () => {
-  let service: UserService;
-  let repo: Repository<User>;
+  let service: UserService
+  let repo: Repository<User>
 
-  const user: User = {
+  const user = {
     id: faker.string.uuid() as UserId,
     name: faker.internet.userName(),
     email: faker.internet.email(),
@@ -24,37 +24,38 @@ describe('UsersService', () => {
     role: UserRole.User,
     transactions: [],
     categories: [],
-  };
+    ownBudgets: [],
+  } as User
 
   const registerData: RegisterUserDto = {
     name: faker.internet.userName(),
     email: faker.internet.email(),
-    password: faker.internet.password()
+    password: faker.internet.password(),
   }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-          UserService,
+        UserService,
         {
           provide: getRepositoryToken(User),
           useValue: {
             create: vi.fn(),
             save: vi.fn(),
             delete: vi.fn(),
-          }
+          },
         },
       ],
-    }).compile();
+    }).compile()
 
-    service = module.get<UserService>(UserService);
+    service = module.get<UserService>(UserService)
 
-    repo = module.get<Repository<User>>(getRepositoryToken(User));
-  });
+    repo = module.get<Repository<User>>(getRepositoryToken(User))
+  })
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+    expect(service).toBeDefined()
+  })
 
   describe('Register method', () => {
     const testHashedPassword = 'hashPassword'
@@ -71,11 +72,10 @@ describe('UsersService', () => {
     it('should throw error if provided email is already taken', async () => {
       vi.spyOn(service, 'findOneByEmail').mockResolvedValueOnce(user)
 
-      await expect(service.register(registerData) ).rejects.toThrowError(BadRequestException)
+      await expect(service.register(registerData)).rejects.toThrowError(BadRequestException)
     })
 
     it('should call usersRepository.create method with correct data', async () => {
-
       const dataWithHashedPassword = {
         name: registerData.name,
         email: registerData.email,
@@ -104,7 +104,9 @@ describe('UsersService', () => {
 
       vi.spyOn(service, 'findOneById').mockResolvedValueOnce(null)
 
-      await expect(service.edit(user.id, loggedUserData, editedData) ).rejects.toThrowError(NotFoundException)
+      await expect(service.edit(user.id, loggedUserData, editedData)).rejects.toThrowError(
+        NotFoundException,
+      )
     })
 
     it('should throw error if provided user id and current not admin logged user id are different', async () => {
@@ -119,7 +121,9 @@ describe('UsersService', () => {
 
       vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
 
-      await expect(service.edit(user.id, loggedUserData, editedData) ).rejects.toThrowError(ForbiddenException)
+      await expect(service.edit(user.id, loggedUserData, editedData)).rejects.toThrowError(
+        ForbiddenException,
+      )
     })
 
     it('should throw error if provided edited email is already taken', async () => {
@@ -132,7 +136,7 @@ describe('UsersService', () => {
         email: faker.internet.email(),
       }
 
-      const anotherUser: User = {
+      const anotherUser = {
         id: faker.string.uuid() as UserId,
         name: faker.internet.userName(),
         email: faker.internet.email(),
@@ -141,12 +145,15 @@ describe('UsersService', () => {
         role: UserRole.User,
         transactions: [],
         categories: [],
-      };
+        ownBudgets: [],
+      } as User
 
       vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
       vi.spyOn(service, 'findOneByEmail').mockResolvedValueOnce(anotherUser)
 
-      await expect(service.edit(user.id, loggedUserData, editedData) ).rejects.toThrowError(BadRequestException)
+      await expect(service.edit(user.id, loggedUserData, editedData)).rejects.toThrowError(
+        BadRequestException,
+      )
     })
 
     it('should call hashPassword function with provided password', async () => {
@@ -254,7 +261,7 @@ describe('UsersService', () => {
       }
 
       vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
-      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
 
       await service.delete(user.id, loggedUserData)
 
@@ -268,7 +275,7 @@ describe('UsersService', () => {
       }
 
       vi.spyOn(service, 'findOneById').mockResolvedValueOnce(user)
-      vi.spyOn(repo, 'delete').mockResolvedValueOnce({raw: [], affected: 1})
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
 
       await service.delete(user.id, loggedUserData)
 
@@ -325,4 +332,4 @@ describe('UsersService', () => {
       expect(result).toEqual(user)
     })
   })
-});
+})
