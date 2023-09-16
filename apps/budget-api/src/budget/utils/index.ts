@@ -17,3 +17,6 @@ export const filterBudgetsByUserId = (
   budgets.filter(
     budget => budget.owner.id === userId || isUserAmongBudgetUsers(userId, budget.users),
   )
+
+export const deleteUserFromBudgetUsers = (userId: UserId, budgetUsers: User[]): User[] =>
+  budgetUsers.filter(user => user.id !== userId)

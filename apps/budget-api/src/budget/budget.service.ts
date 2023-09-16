@@ -258,4 +258,36 @@ export class BudgetService {
 
     return await this.budgetRepository.save(budget)
   }
+
+  async unshare(budgetId: BudgetId, ownerId: UserId, userId: UserId): Promise<BudgetWithUsers> {
+    const budget = await this.findBudgetByIdAndOwner(budgetId, ownerId)
+
+    if (!budget) {
+      throw new NotFoundException('There is no budget')
+    }
+
+    const users = await budget.users
+
+    if (!isUserAmongBudgetUsers(userId, users)) {
+      throw new NotFoundException('There is no such budget user')
+    }
+
+    const filteredUsers = deleteUserFromBudgetUsers(userId, users)
+
+    budget.users = Promise.resolve(filteredUsers)
+
+    try {
+      await this.budgetRepository.save(budget)
+    } catch (e) {
+      throw new Error(e)
+    }
+
+    return {
+      id: budget.id,
+      name: budget.name,
+      owner: budget.owner,
+      users: filteredUsers,
+      transactions: budget.transactions,
+    }
+  }
 }

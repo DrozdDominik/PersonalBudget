@@ -18,62 +18,63 @@ export class BudgetController {
   @UseGuards(AuthGuard('jwt'))
   @Serialize(CreateBudgetResponseDto)
   @Post('/')
-  createBudget(
-    @Body() newBudget: CreateBudgetDto,
-    @CurrentUser() user: User,
-  ): Promise<Budget> {
-    return this.budgetService.create(newBudget.name, user);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Serialize(GetBudgetDto)
-  @Get('/:id')
-  getBudget(
-    @Param('id') id: BudgetId,
-    @CurrentUser() user: User,
-  ): Promise<BudgetWithUsers> {
-    return this.budgetService.get(id, user);
+  createBudget(@Body() newBudget: CreateBudgetDto, @CurrentUser() user: User): Promise<Budget> {
+    return this.budgetService.create(newBudget.name, user)
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Serialize(ShareBudgetResponseDto)
   @Post('/share')
-  shareBudget(
+  shareBudget(@Body() data: ShareBudgetDto, @CurrentUser() user: User): Promise<BudgetWithUsers> {
+    return this.budgetService.addUser(data.budgetId, user.id, data.userId)
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(ShareBudgetResponseDto)
+  @Patch('/share')
+  unshareBudget(
     @Body() data: ShareBudgetDto,
-    @CurrentUser() user: User,
+    @CurrentUser() owner: User,
   ): Promise<BudgetWithUsers> {
-    return this.budgetService.addUser(data.budgetId, user.id, data.newUserId);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Serialize(GetBudgetDto)
-  @Get('/owner/:id')
-  getAllOwnBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
-    return this.budgetService.getAllOwnBudgets(user.id);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Serialize(GetBudgetDto)
-  @Get('/shared/:id')
-  getAllSharedBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
-    return this.budgetService.getAllSharedBudgets(user.id);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Serialize(GetBudgetDto)
-  @Get('/user/:id')
-  getAllUserBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
-    return this.budgetService.getAllUserBudgets(user.id);
+    return this.budgetService.unshare(data.budgetId, owner.id, data.userId)
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Serialize(EditBudgetResponseDto)
   @Patch('/:id')
   editBudgetName(
-      @Param('id') id: BudgetId,
-      @Body() data: EditBudgetNameDto,
-      @CurrentUser() user: User,
+    @Param('id') id: BudgetId,
+    @Body() data: EditBudgetNameDto,
+    @CurrentUser() user: User,
   ): Promise<Budget> {
     return this.budgetService.editName(id, user.id, data.name)
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/owner')
+  getAllOwnBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
+    return this.budgetService.getAllOwnBudgets(user.id)
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/shared')
+  getAllSharedBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
+    return this.budgetService.getAllSharedBudgets(user.id)
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/user')
+  getAllUserBudgets(@CurrentUser() user: User): Promise<BudgetWithUsers[]> {
+    return this.budgetService.getAllUserBudgets(user.id)
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/:id')
+  getBudget(@Param('id') id: BudgetId, @CurrentUser() user: User): Promise<BudgetWithUsers> {
+    return this.budgetService.get(id, user)
   }
 }
