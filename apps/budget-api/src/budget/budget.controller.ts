@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -90,7 +91,7 @@ export class BudgetController {
 
   @UseGuards(AuthGuard('jwt'))
   @Serialize(GetBudgetDto)
-  @Get('/:id')
+  @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteBudget(@Param('id') id: BudgetId, @CurrentUser() user: User): Promise<void> {
     return this.budgetService.delete(id, user)
