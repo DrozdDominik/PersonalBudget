@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { BudgetService } from './budget.service'
 import { AuthGuard } from '@nestjs/passport'
 import { CurrentUser } from '../decorators/current-user.decorator'
@@ -76,5 +86,13 @@ export class BudgetController {
   @Get('/:id')
   getBudget(@Param('id') id: BudgetId, @CurrentUser() user: User): Promise<BudgetWithUsers> {
     return this.budgetService.get(id, user)
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(GetBudgetDto)
+  @Get('/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteBudget(@Param('id') id: BudgetId, @CurrentUser() user: User): Promise<void> {
+    return this.budgetService.delete(id, user)
   }
 }

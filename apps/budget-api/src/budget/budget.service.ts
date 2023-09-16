@@ -290,4 +290,22 @@ export class BudgetService {
       transactions: budget.transactions,
     }
   }
+
+  async delete(budgetId: BudgetId, user: User): Promise<void> {
+    const budget = await this.findBudgetById(budgetId)
+
+    if (!budget) {
+      throw new NotFoundException()
+    }
+
+    if (budget.owner.id !== user.id && user.role !== UserRole.Admin) {
+      throw new ForbiddenException()
+    }
+
+    try {
+      await this.budgetRepository.delete(budgetId)
+    } catch {
+      throw new Error(`Delete budget ${budget.id} failed`)
+    }
+  }
 }
