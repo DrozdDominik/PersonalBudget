@@ -11,7 +11,7 @@ import { faker } from '@faker-js/faker'
 import { userFactory } from '../../user/tests/utlis'
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { BudgetId, BudgetWithUsers } from '../types'
-import { UserRole } from '../../user/types'
+import { UserId, UserRole } from '../../user/types'
 
 describe('BudgetService', () => {
   let service: BudgetService
@@ -154,6 +154,53 @@ describe('BudgetService', () => {
       const result = await service.get(id, user)
 
       expect(result).toStrictEqual(expectedResult)
+    })
+  })
+
+  describe('checkUserAccessToBudget method', () => {
+    it('should return null if there is no budget with provided id', async () => {
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(null)
+
+      const userId = faker.string.uuid() as UserId
+      const budgetId = budget.id
+
+      const result = await service.checkUserAccessToBudget(budgetId, userId)
+
+      expect(result).toBeNull()
+    })
+
+    it('should return null if user with provided id have no access to budget with provided id', async () => {
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+
+      const userId = faker.string.uuid() as UserId
+      const budgetId = budget.id
+
+      const result = await service.checkUserAccessToBudget(budgetId, userId)
+
+      expect(result).toBeNull()
+    })
+
+    it('should return budget if user with provided id is owner', async () => {
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+
+      const userId = budget.owner.id
+      const budgetId = budget.id
+
+      const result = await service.checkUserAccessToBudget(budgetId, userId)
+
+      expect(result).toStrictEqual(budget)
+    })
+
+    it('should return budget if user with provided id is one of shared users', async () => {
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+
+      const users = await budget.users
+      const userId = users[1].id
+      const budgetId = budget.id
+
+      const result = await service.checkUserAccessToBudget(budgetId, userId)
+
+      expect(result).toStrictEqual(budget)
     })
   })
 })
