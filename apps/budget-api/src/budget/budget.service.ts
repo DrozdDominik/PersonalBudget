@@ -100,11 +100,17 @@ export class BudgetService {
     if (!budget) {
       throw new NotFoundException()
     }
-    if (budget.owner.id !== user.id && user.role !== UserRole.Admin) {
+
+    const users = await budget.users
+
+    if (
+      budget.owner.id !== user.id &&
+      user.role !== UserRole.Admin &&
+      !isUserAmongBudgetUsers(user.id, users)
+    ) {
       throw new ForbiddenException()
     }
 
-    const users = await budget.users
     return {
       id: budget.id,
       name: budget.name,
