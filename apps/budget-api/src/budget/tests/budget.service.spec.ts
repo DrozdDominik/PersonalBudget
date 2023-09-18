@@ -290,4 +290,44 @@ describe('BudgetService', () => {
       expect(result).toStrictEqual(expectedResult)
     })
   })
+
+  describe('delete method', () => {
+    it('should throw error if there is no budget with provided id', async () => {
+      const budgetId = faker.string.uuid() as BudgetId
+      const user = owner
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(null)
+
+      await expect(service.delete(budgetId, user)).rejects.toThrowError(NotFoundException)
+    })
+
+    it('should throw error if budget with provided id belongs to another user and current user has no admin role', async () => {
+      const budgetId = budget.id
+      const [user] = userFactory()
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+
+      await expect(service.delete(budgetId, user)).rejects.toThrowError(ForbiddenException)
+    })
+
+    it('should call budgetRepository with correct budget id', async () => {
+      const budgetId = budget.id
+      const user = owner
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
+
+      await service.delete(budgetId, user)
+
+      expect(repo.delete).toHaveBeenCalledWith(budget.id)
+    })
+
+    it('should call budgetRepository with correct budget id if budget belongs to another user but current user has admin role', async () => {
+      const budgetId = budget.id
+      const user = admin
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
+
+      await service.delete(budgetId, user)
+
+      expect(repo.delete).toHaveBeenCalledWith(budget.id)
+    })
+  })
 })
