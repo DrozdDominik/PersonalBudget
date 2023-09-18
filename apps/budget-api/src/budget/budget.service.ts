@@ -112,11 +112,8 @@ export class BudgetService {
     }
 
     return {
-      id: budget.id,
-      name: budget.name,
-      owner: budget.owner,
+      ...budget,
       users,
-      transactions: budget.transactions,
     }
   }
 
@@ -124,11 +121,11 @@ export class BudgetService {
     const budget = await this.findBudgetById(budgetId)
 
     if (!budget) {
-      throw new NotFoundException('budget')
+      throw new NotFoundException('Budget not found')
     }
 
     if (budget.owner.id !== ownerId) {
-      throw new BadRequestException('Not your budget')
+      throw new ForbiddenException('Not your budget')
     }
 
     if (ownerId === newUserId) {
@@ -138,13 +135,13 @@ export class BudgetService {
     const newUser = await this.userService.findOneById(newUserId)
 
     if (!newUser) {
-      throw new NotFoundException('user')
+      throw new NotFoundException('User not found')
     }
 
     const budgetUsers = await budget.users
 
     if (isUserAmongBudgetUsers(newUserId, budgetUsers)) {
-      throw new BadRequestException('Already have access')
+      throw new BadRequestException('Already has access')
     }
 
     budgetUsers.push(newUser)
@@ -158,11 +155,8 @@ export class BudgetService {
     }
 
     return {
-      id: budget.id,
-      name: budget.name,
-      owner: budget.owner,
+      ...budget,
       users: budgetUsers,
-      transactions: budget.transactions,
     }
   }
 
@@ -184,11 +178,8 @@ export class BudgetService {
       budgets.map(async budget => {
         const users = await budget.users
         return {
-          id: budget.id,
-          name: budget.name,
-          owner: budget.owner,
+          ...budget,
           users,
-          transactions: budget.transactions,
         }
       }),
     )
@@ -210,11 +201,8 @@ export class BudgetService {
       budgets.map(async budget => {
         const users = await budget.users
         return {
-          id: budget.id,
-          name: budget.name,
-          owner: budget.owner,
+          ...budget,
           users,
-          transactions: budget.transactions,
         }
       }),
     )
@@ -235,11 +223,8 @@ export class BudgetService {
       budgets.map(async budget => {
         const users = await budget.users
         return {
-          id: budget.id,
-          name: budget.name,
-          owner: budget.owner,
+          ...budget,
           users,
-          transactions: budget.transactions,
         }
       }),
     )
@@ -289,11 +274,8 @@ export class BudgetService {
     }
 
     return {
-      id: budget.id,
-      name: budget.name,
-      owner: budget.owner,
+      ...budget,
       users: filteredUsers,
-      transactions: budget.transactions,
     }
   }
 
