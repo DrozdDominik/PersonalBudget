@@ -1,28 +1,33 @@
-import { Expose, Transform } from "class-transformer";
-import { UserId } from "../../user/types";
-import { TransactionId, TransactionType } from "../types";
+import { Expose, Transform } from 'class-transformer'
+import { UserId } from '../../user/types'
+import { TransactionId, TransactionType } from '../types'
+import { BudgetId } from '../../budget/types'
 
 export class TransactionResponse {
-    @Expose()
-    id: TransactionId
+  @Expose()
+  id: TransactionId
 
-    @Expose()
-    type: TransactionType
+  @Expose()
+  type: TransactionType
 
-    @Transform(({ obj }) => obj.category.name)
-    @Expose()
-    name: string
+  @Transform(({ obj }) => obj.category.name)
+  @Expose()
+  category: string
 
-    @Expose()
-    amount: number
+  @Expose()
+  amount: number
 
-    @Expose()
-    date: Date
+  @Expose()
+  date: Date
 
-    @Expose()
-    comment: string | null
+  @Expose()
+  comment: string | null
 
-    @Transform(({ obj }) => obj.user.id)
-    @Expose()
-    userId: UserId
+  @Transform(({ obj }) => obj.user.id)
+  @Expose()
+  userId: UserId
+
+  @Transform(({ obj }) => obj.budget.id)
+  @Expose()
+  budgetId: BudgetId
 }

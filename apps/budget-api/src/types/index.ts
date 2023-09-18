@@ -1,30 +1,30 @@
-import { UserId, UserIdentificationData } from "../user/types";
-import { CategoryId } from "../category/types";
-import { TransactionId } from "../transaction/types";
+import { UserId, UserIdentificationData } from '../user/types'
+import { CategoryId } from '../category/types'
+import { TransactionId } from '../transaction/types'
 
 type DbConfig = {
-    host: string
-    username: string
-    password: string
-    database: string
+  host: string
+  username: string
+  password: string
+  database: string
 }
 
 type JwtConfig = {
-    jwtSecret: string
-    expirationTime: number
+  jwtSecret: string
+  expirationTime: number
 }
 
 export interface Config {
-    db: DbConfig
-    jwt: JwtConfig
+  db: DbConfig
+  jwt: JwtConfig
 }
 
 export type TransactionIdentificationData = {
-    transactionId: TransactionId
-    user: UserIdentificationData
+  transactionId: TransactionId
+  user: UserIdentificationData
 }
 
 export type CustomCategoryIdentificationData = {
-    categoryId: CategoryId
-    userId: UserId
+  categoryId: CategoryId
+  userId: UserId
 }
