@@ -16,6 +16,7 @@ import { UserId, UserRole } from '../../user/types'
 describe('BudgetService', () => {
   let service: BudgetService
   let repo: Repository<Budget>
+  let userService: UserService
 
   const [owner] = userFactory()
 
@@ -57,6 +58,8 @@ describe('BudgetService', () => {
     service = module.get<BudgetService>(BudgetService)
 
     repo = module.get<Repository<Budget>>(getRepositoryToken(Budget))
+
+    userService = module.get<UserService>(UserService)
   })
 
   it('should be defined', () => {
@@ -201,6 +204,90 @@ describe('BudgetService', () => {
       const result = await service.checkUserAccessToBudget(budgetId, userId)
 
       expect(result).toStrictEqual(budget)
+    })
+  })
+
+  describe('addUser method', () => {
+    it('should throw error if there is no budget with provided id', async () => {
+      const budgetId = faker.string.uuid() as BudgetId
+      const ownerId = owner.id
+      const newUserId = users[1].id
+
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(null)
+
+      await expect(service.addUser(budgetId, ownerId, newUserId)).rejects.toEqual(
+        new NotFoundException('Budget not found'),
+      )
+    })
+
+    it('should throw error if user is not owner of budget with provided id', async () => {
+      const budgetId = budget.id
+      const ownerId = faker.string.uuid() as UserId
+      const newUserId = users[1].id
+
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+
+      await expect(service.addUser(budgetId, ownerId, newUserId)).rejects.toEqual(
+        new ForbiddenException('Not your budget'),
+      )
+    })
+
+    it('should throw error if owner id is equal user id', async () => {
+      const budgetId = budget.id
+      const ownerId = budget.owner.id
+      const newUserId = ownerId
+
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+
+      await expect(service.addUser(budgetId, ownerId, newUserId)).rejects.toEqual(
+        new BadRequestException('Cannot share budget with yourself'),
+      )
+    })
+
+    it('should throw error if there is no user with provided id', async () => {
+      const budgetId = budget.id
+      const ownerId = budget.owner.id
+      const newUserId = faker.string.uuid() as UserId
+
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+      vi.spyOn(userService, 'findOneById').mockResolvedValueOnce(null)
+
+      await expect(service.addUser(budgetId, ownerId, newUserId)).rejects.toEqual(
+        new NotFoundException('User not found'),
+      )
+    })
+
+    it('should throw error if user already has access there is no user with provided id', async () => {
+      const budgetId = budget.id
+      const ownerId = budget.owner.id
+      const newUser = users[1]
+
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+      vi.spyOn(userService, 'findOneById').mockResolvedValueOnce(newUser)
+
+      await expect(service.addUser(budgetId, ownerId, newUser.id)).rejects.toEqual(
+        new BadRequestException('Already has access'),
+      )
+    })
+
+    it('should returns correct data', async () => {
+      const budgetId = budget.id
+      const ownerId = budget.owner.id
+      const [newUser] = userFactory()
+      const users = await budget.users
+      const expectedResult = {
+        ...budget,
+        users: [...users, newUser],
+      }
+
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
+      vi.spyOn(userService, 'findOneById').mockResolvedValueOnce(newUser)
+      vi.spyOn(repo, 'save')
+
+      const result = await service.addUser(budgetId, ownerId, newUser.id)
+
+      expect(repo.save).toHaveBeenCalledOnce()
+      expect(result).toStrictEqual(expectedResult)
     })
   })
 })
