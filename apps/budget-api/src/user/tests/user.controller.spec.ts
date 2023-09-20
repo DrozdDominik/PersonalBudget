@@ -8,30 +8,20 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import request from 'supertest'
 import { INestApplication } from '@nestjs/common'
 import { faker } from '@faker-js/faker'
-import { UserId, UserRole } from '../types'
 import { RegisterUserDto } from '../dtos/register-user.dto'
 import { AuthGuard } from '@nestjs/passport'
 import { EditUserDto } from '../dtos/edit-user.dto'
 import { NextFunction, Request, Response } from 'express'
 import { EditUserResponseDto } from '../dtos/edit-user-response.dto'
 import { RegisterResponseDto } from '../dtos/register-response.dto'
+import { userFactory } from './utlis'
 
 describe('UsersController', () => {
   let controller: UserController
   let service: UserService
   let app: INestApplication
 
-  const user = {
-    id: faker.string.uuid() as UserId,
-    name: faker.internet.userName(),
-    email: faker.internet.email(),
-    passwordHash: faker.internet.password(),
-    currentToken: null,
-    role: UserRole.User,
-    transactions: [],
-    categories: [],
-    ownBudgets: [],
-  } as User
+  const [loggedUser] = userFactory()
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -55,7 +45,7 @@ describe('UsersController', () => {
     app = module.createNestApplication()
 
     app.use((req: Request & { user: User }, res: Response, next: NextFunction) => {
-      req.user = user
+      req.user = loggedUser
       next()
     })
 
@@ -73,17 +63,17 @@ describe('UsersController', () => {
   describe('POST endpoint', () => {
     it('should return status code 201 and returns new user id and name ', () => {
       const newUserData: RegisterUserDto = {
-        email: user.email,
-        name: user.name,
+        email: loggedUser.email,
+        name: loggedUser.name,
         password: faker.internet.password(),
       }
 
       const expectedResponse: RegisterResponseDto = {
-        id: user.id,
-        name: user.name,
+        id: loggedUser.id,
+        name: loggedUser.name,
       }
 
-      vi.spyOn(service, 'register').mockResolvedValueOnce(user)
+      vi.spyOn(service, 'register').mockResolvedValueOnce(loggedUser)
 
       return request(app.getHttpServer())
         .post('/user')
@@ -95,15 +85,18 @@ describe('UsersController', () => {
 
   describe('GET endpoint', () => {
     it('should return status code 200 and user with provided id', () => {
-      vi.spyOn(service, 'get').mockResolvedValueOnce(user)
-      return request(app.getHttpServer()).get(`/user/${user.id}`).expect(200).expect(user)
+      vi.spyOn(service, 'get').mockResolvedValueOnce(loggedUser)
+      return request(app.getHttpServer())
+        .get(`/user/${loggedUser.id}`)
+        .expect(200)
+        .expect(loggedUser)
     })
   })
 
   describe('DELETE endpoint', () => {
     it('should return status code 204', () => {
       vi.spyOn(service, 'delete').mockImplementationOnce(async () => {})
-      return request(app.getHttpServer()).delete(`/user/${user.id}`).expect(204)
+      return request(app.getHttpServer()).delete(`/user/${loggedUser.id}`).expect(204)
     })
   })
 
@@ -114,7 +107,7 @@ describe('UsersController', () => {
       }
 
       const editedUser = {
-        ...user,
+        ...loggedUser,
         ...dataToEdit,
       } as User
 
@@ -126,7 +119,7 @@ describe('UsersController', () => {
 
       vi.spyOn(service, 'edit').mockResolvedValueOnce(editedUser)
       return request(app.getHttpServer())
-        .patch(`/user/${user.id}`)
+        .patch(`/user/${loggedUser.id}`)
         .send()
         .expect(200)
         .expect(expectedResponse)

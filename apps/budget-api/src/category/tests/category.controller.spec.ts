@@ -14,7 +14,7 @@ import { User } from '../../user/user.entity'
 import { INestApplication } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { faker } from '@faker-js/faker'
-import { UserId, UserRole } from '../../user/types'
+import { UserRole } from '../../user/types'
 import { NextFunction, Request, Response } from 'express'
 import { CategoryCreateDto } from '../dtos/category-create.dto'
 import { TransactionType } from '../../transaction/types'
@@ -23,23 +23,14 @@ import { CategoryId } from '../types'
 import request from 'supertest'
 import { CategoryEditDto } from '../dtos/category-edit.dto'
 import { categoryFactory } from './utils'
+import { userFactory } from '../../user/tests/utlis'
 
 describe('CategoryController', () => {
   let controller: CategoryController
   let service: CategoryService
   let app: INestApplication
 
-  const loggedUser = {
-    id: faker.string.uuid() as UserId,
-    name: faker.internet.userName(),
-    email: faker.internet.email(),
-    passwordHash: faker.internet.password(),
-    currentToken: null,
-    role: UserRole.Admin,
-    transactions: [],
-    categories: [],
-    ownBudgets: [],
-  } as User
+  const [loggedUser] = userFactory(1, UserRole.Admin)
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
