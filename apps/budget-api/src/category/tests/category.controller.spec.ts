@@ -32,6 +32,8 @@ describe('CategoryController', () => {
 
   const [loggedUser] = userFactory(1, UserRole.Admin)
 
+  const [category] = categoryFactory(TransactionType.INCOME)
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CategoryController],
@@ -146,14 +148,14 @@ describe('CategoryController', () => {
   describe('DELETE "/default/:id" endpoint', () => {
     it('should return status code 204', () => {
       vi.spyOn(service, 'deleteDefault').mockImplementationOnce(async () => {})
-      return request(app.getHttpServer()).delete(`/category/default/${loggedUser.id}`).expect(204)
+      return request(app.getHttpServer()).delete(`/category/default/${category.id}`).expect(204)
     })
   })
 
   describe('DELETE "/custom/:id" endpoint', () => {
     it('should return status code 204', () => {
       vi.spyOn(service, 'delete').mockImplementationOnce(async () => {})
-      return request(app.getHttpServer()).delete(`/category/custom/${loggedUser.id}`).expect(204)
+      return request(app.getHttpServer()).delete(`/category/custom/${category.id}`).expect(204)
     })
   })
 
@@ -182,7 +184,7 @@ describe('CategoryController', () => {
       vi.spyOn(service, 'editDefault').mockResolvedValueOnce(editedCategory)
 
       return request(app.getHttpServer())
-        .patch(`/category/default/${loggedUser.id}`)
+        .patch(`/category/default/${category.id}`)
         .send(dataToEdit)
         .expect(200)
         .expect(expectedResponse)
@@ -219,7 +221,7 @@ describe('CategoryController', () => {
       vi.spyOn(service, 'edit').mockResolvedValueOnce(editedCategory)
 
       return request(app.getHttpServer())
-        .patch(`/category/custom/${loggedUser.id}`)
+        .patch(`/category/custom/${category.id}`)
         .send(dataToEdit)
         .expect(200)
         .expect(expectedResponse)
