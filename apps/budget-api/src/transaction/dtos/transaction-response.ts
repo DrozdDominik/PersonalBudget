@@ -18,7 +18,7 @@ export class TransactionResponse {
   amount: number
 
   @Expose()
-  date: Date
+  date: string
 
   @Expose()
   comment: string | null
