@@ -31,10 +31,10 @@ export class TransactionController {
   @Serialize(TransactionResponse)
   @Post('/')
   createTransaction(
-    @Body() newIncome: CreateTransactionDto,
+    @Body() newTransaction: CreateTransactionDto,
     @CurrentUser() user: User,
   ): Promise<Transaction> {
-    return this.transactionService.create(newIncome, user)
+    return this.transactionService.create(newTransaction, user)
   }
 
   @UseGuards(AuthGuard('jwt'))
