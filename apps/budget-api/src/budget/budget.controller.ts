@@ -35,9 +35,9 @@ export class BudgetController {
 
   @UseGuards(AuthGuard('jwt'))
   @Serialize(ShareBudgetResponseDto)
-  @Post('/share')
-  shareBudget(@Body() data: ShareBudgetDto, @CurrentUser() user: User): Promise<BudgetWithUsers> {
-    return this.budgetService.addUser(data.budgetId, user.id, data.userId)
+  @Patch('/share')
+  shareBudget(@Body() data: ShareBudgetDto, @CurrentUser() owner: User): Promise<BudgetWithUsers> {
+    return this.budgetService.addUser(data.budgetId, owner.id, data.userId)
   }
 
   @UseGuards(AuthGuard('jwt'))
