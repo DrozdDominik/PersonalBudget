@@ -42,12 +42,12 @@ export class BudgetController {
 
   @UseGuards(AuthGuard('jwt'))
   @Serialize(ShareBudgetResponseDto)
-  @Patch('/share')
+  @Patch('/unshare')
   unshareBudget(
     @Body() data: ShareBudgetDto,
     @CurrentUser() owner: User,
   ): Promise<BudgetWithUsers> {
-    return this.budgetService.unshare(data.budgetId, owner.id, data.userId)
+    return this.budgetService.removeUser(data.budgetId, owner.id, data.userId)
   }
 
   @UseGuards(AuthGuard('jwt'))
