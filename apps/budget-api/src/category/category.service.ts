@@ -54,7 +54,7 @@ export class CategoryService {
     })
   }
 
-  async findCustomById(id: CategoryId, userId: UserId) {
+  async findCustomById(id: CategoryId, userId: UserId): Promise<Category | null> {
     return await this.categoryRepository.findOne({
       relations: {
         transactions: true,
@@ -70,7 +70,7 @@ export class CategoryService {
     })
   }
 
-  async findDefaultOrCustomByUserAndId(id: CategoryId, userId: UserId): Promise<Category> {
+  async findDefaultOrCustomByUserAndId(id: CategoryId, userId: UserId): Promise<Category | null> {
     const defaultCategory = await this.findDefaultById(id)
 
     if (defaultCategory) {
@@ -86,7 +86,7 @@ export class CategoryService {
     return category
   }
 
-  async findDefaultById(id: CategoryId) {
+  async findDefaultById(id: CategoryId): Promise<Category | null> {
     return await this.categoryRepository.findOne({
       relations: { transactions: true },
       where: {
@@ -97,7 +97,7 @@ export class CategoryService {
     })
   }
 
-  async createDefault(data: CategoryCreateDto) {
+  async createDefault(data: CategoryCreateDto): Promise<Category> {
     const defaultCategory = await this.findDefaultByNameAndTransactionType(
       data.name,
       data.transactionType,
@@ -146,7 +146,7 @@ export class CategoryService {
     return savedNewDefaultCategory
   }
 
-  async create(data: CategoryCreateDto, user: User) {
+  async create(data: CategoryCreateDto, user: User): Promise<Category> {
     const defaultCategory = await this.findDefaultByNameAndTransactionType(
       data.name,
       data.transactionType,
@@ -205,7 +205,10 @@ export class CategoryService {
     }
   }
 
-  async edit(identificationData: CustomCategoryIdentificationData, dataToEdit: CategoryEditDto) {
+  async edit(
+    identificationData: CustomCategoryIdentificationData,
+    dataToEdit: CategoryEditDto,
+  ): Promise<Category> {
     const { categoryId, userId } = identificationData
 
     const category = await this.findCustomById(categoryId, userId)
@@ -234,7 +237,7 @@ export class CategoryService {
     return await this.categoryRepository.save(category)
   }
 
-  async editDefault(id: CategoryId, dataToEdit: CategoryEditDto) {
+  async editDefault(id: CategoryId, dataToEdit: CategoryEditDto): Promise<Category> {
     const defaultCategory = await this.findDefaultById(id)
 
     if (!defaultCategory) {

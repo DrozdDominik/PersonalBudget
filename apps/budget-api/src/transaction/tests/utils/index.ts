@@ -1,10 +1,10 @@
 import { Transaction } from '../../transaction.entity'
 import { faker } from '@faker-js/faker'
-import { User } from '../../../user/user.entity'
-import { Category } from '../../../category/category.entity'
 import { UserId } from '../../../user/types'
 import { TransactionId, TransactionType } from '../../types'
-import { Budget } from '../../../budget/budget.entity'
+import { categoryFactory } from '../../../category/tests/utils'
+import { userFactory } from '../../../user/tests/utlis'
+import { budgetFactory } from '../../../budget/tests/utils'
 
 export const transactionFactory = (
   quantity: number,
@@ -15,7 +15,14 @@ export const transactionFactory = (
     throw new Error('Quantity must be integer greater than zero')
   }
 
+  const [category] = categoryFactory(TransactionType.INCOME)
+  const [user] = userFactory()
+  const [budget] = budgetFactory()
   const transactions: Transaction[] = []
+
+  if (!!userId) {
+    user.id = userId
+  }
 
   for (let i = 0; i < quantity; i++) {
     const transaction: Transaction = {
@@ -24,15 +31,9 @@ export const transactionFactory = (
       amount: Number(faker.finance.amount(0, 1000000, 2)),
       date: faker.date.anytime(),
       comment: null,
-      category: {
-        id: faker.string.uuid(),
-      } as Category,
-      user: {
-        id: userId ?? faker.string.uuid(),
-      } as User,
-      budget: {
-        id: faker.string.uuid(),
-      } as Budget,
+      category,
+      user,
+      budget,
     }
 
     transactions.push(transaction)

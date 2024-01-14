@@ -16,10 +16,10 @@ import { AdminGuard } from '../guards/AdminGuard'
 import { CategoryCreateDto } from './dtos/category-create.dto'
 import { Serialize } from '../interceptors/serialize.interceptor'
 import {
-  CategoryResponse,
+  CustomCategoryResponse,
   DefaultCategoryResponse,
   GetCategoriesResponse,
-} from './dtos/category-response'
+} from './dtos/custom-category-response'
 import { CurrentUser } from '../decorators/current-user.decorator'
 import { User } from '../user/user.entity'
 import { CustomCategoryIdentificationData } from '../types'
@@ -67,7 +67,7 @@ export class CategoryController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Serialize(CategoryResponse)
+  @Serialize(CustomCategoryResponse)
   @Post('/custom')
   add(@Body() newCategory: CategoryCreateDto, @CurrentUser() user: User) {
     return this.categoryService.create(newCategory, user)
@@ -81,7 +81,7 @@ export class CategoryController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Serialize(CategoryResponse)
+  @Serialize(CustomCategoryResponse)
   @Patch('/custom/:id')
   edit(
     @Param('id') id: CategoryId,

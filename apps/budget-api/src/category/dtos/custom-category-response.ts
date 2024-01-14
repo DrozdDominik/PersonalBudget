@@ -17,7 +17,7 @@ export class DefaultCategoryResponse {
   transactionType: TransactionType
 }
 
-export class CategoryResponse extends DefaultCategoryResponse {
+export class CustomCategoryResponse extends DefaultCategoryResponse {
   constructor() {
     super()
   }

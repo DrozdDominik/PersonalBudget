@@ -250,7 +250,7 @@ export class BudgetService {
     return await this.budgetRepository.save(budget)
   }
 
-  async unshare(budgetId: BudgetId, ownerId: UserId, userId: UserId): Promise<BudgetWithUsers> {
+  async removeUser(budgetId: BudgetId, ownerId: UserId, userId: UserId): Promise<BudgetWithUsers> {
     const budget = await this.findBudgetByIdAndOwner(budgetId, ownerId)
 
     if (!budget) {
