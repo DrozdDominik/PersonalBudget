@@ -9,6 +9,7 @@ import typeorm from './config/typeorm'
 import { TransactionModule } from './transaction/transaction.module'
 import { CategoryModule } from './category/category.module'
 import { BudgetModule } from './budget/budget.module'
+import { ReportModule } from './report/report.module'
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { BudgetModule } from './budget/budget.module'
     TransactionModule,
     CategoryModule,
     BudgetModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
