@@ -62,6 +62,41 @@ export class BudgetService {
     })
   }
 
+  async findBudgetWithTransactionsAndCategoriesByIdAndUserId(
+    id: BudgetId,
+    userId: UserId,
+  ): Promise<Budget | null> {
+    const budget = await this.budgetRepository.findOne({
+      relations: {
+        owner: true,
+        transactions: {
+          category: true,
+          user: true,
+        },
+        users: true,
+      },
+      where: {
+        id,
+      },
+    })
+
+    if (!budget) {
+      return null
+    }
+
+    if (budget.owner.id === userId) {
+      return budget
+    }
+
+    const users = await budget.users
+
+    if (users.length > 0 && users.some(user => user.id === userId)) {
+      return budget
+    }
+
+    return null
+  }
+
   async checkUserAccessToBudget(id: BudgetId, userId: UserId): Promise<Budget | null> {
     const budget = await this.findBudgetById(id)
 
