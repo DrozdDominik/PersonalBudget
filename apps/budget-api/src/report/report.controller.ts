@@ -26,4 +26,11 @@ export class ReportController {
 
     return this.reportService.getReport(budgetId, user.id)
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(ReportResponse)
+  @Get('/:id/month')
+  getMonthReport(@Param('id') budgetId: BudgetId, @CurrentUser() user: User) {
+    return this.reportService.getMonthReport(budgetId, user.id)
+  }
 }

@@ -30,6 +30,30 @@ export class ReportService {
     return this.getReportData(transactions)
   }
 
+  async getMonthReport(budgetId: BudgetId, userId: UserId): Promise<ReportData> {
+    const budget = await this.budgetService.findBudgetWithTransactionsAndCategoriesByIdAndUserId(
+      budgetId,
+      userId,
+    )
+
+    if (!budget) {
+      throw new NotFoundException('There is no such budget')
+    }
+
+    const transactions = budget.transactions
+
+    const currentMonth = new Date().getMonth()
+    const currentYear = new Date().getFullYear()
+
+    const currentMonthTransactions = transactions.filter(transaction => {
+      const transactionMonth = new Date(transaction.date).getMonth()
+      const transactionYear = new Date(transaction.date).getFullYear()
+      return transactionMonth === currentMonth && transactionYear === currentYear
+    })
+
+    return this.getReportData(currentMonthTransactions)
+  }
+
   async getCustomRangeReport(
     budgetId: BudgetId,
     userId: UserId,
