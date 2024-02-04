@@ -4,7 +4,7 @@ import { TransactionService } from '../transaction/transaction.service'
 import { BudgetId } from '../budget/types'
 import { UserId } from '../user/types'
 import { TransactionType } from '../transaction/types'
-import { DateQueryParamsDto } from './dtos/date-query-params.dto'
+import { DateQueryParamsDto, CategoryAndDateQueryParamsDto } from './dtos/date-query-params.dto'
 import { Transaction } from '../transaction/transaction.entity'
 import { ReportData } from './types'
 
@@ -99,5 +99,38 @@ export class ReportService {
       expenses,
       balance,
     }
+  }
+
+  async getIncomes(
+    budgetId: BudgetId,
+    userId: UserId,
+    options: CategoryAndDateQueryParamsDto,
+  ): Promise<Transaction[]> {
+    const budget = await this.budgetService.findBudgetWithTransactionsAndCategoriesByIdAndUserId(
+      budgetId,
+      userId,
+    )
+
+    if (!budget) {
+      throw new NotFoundException('There is no such budget')
+    }
+
+    let incomes = budget.transactions.filter(
+      transaction => transaction.type === TransactionType.INCOME,
+    )
+
+    if (options.category) {
+      incomes = incomes.filter(income => income.category.name === options.category)
+    }
+
+    if (options.start && options.end) {
+      incomes = incomes.filter(income => {
+        const incomeDate = new Date(income.date)
+
+        return incomeDate >= new Date(options.start) && incomeDate <= new Date(options.end)
+      })
+    }
+
+    return incomes
   }
 }
