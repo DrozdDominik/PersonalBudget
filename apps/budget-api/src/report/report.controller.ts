@@ -20,7 +20,7 @@ export class ReportController {
     @Query() dateRange: DateQueryParamsDto,
     @CurrentUser() user: User,
   ) {
-    if (dateRange) {
+    if (dateRange.start && dateRange.end) {
       return this.reportService.getCustomRangeReport(budgetId, user.id, dateRange)
     }
 
