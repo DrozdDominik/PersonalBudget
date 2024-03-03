@@ -1,82 +1,20 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { BudgetService } from '../budget/budget.service'
-import { TransactionService } from '../transaction/transaction.service'
-import { BudgetId } from '../budget/types'
+import { BudgetId, SearchOptions } from '../budget/types'
 import { UserId } from '../user/types'
 import { TransactionType } from '../transaction/types'
-import { DateQueryParamsDto, CategoryAndDateQueryParamsDto } from './dtos/date-query-params.dto'
 import { Transaction } from '../transaction/transaction.entity'
 import { ReportData } from './types'
+import { DateRange } from '../types'
 
 @Injectable()
 export class ReportService {
-  constructor(
-    @Inject(BudgetService) private budgetService: BudgetService,
-    @Inject(BudgetService) private transactionService: TransactionService,
-  ) {}
+  constructor(@Inject(BudgetService) private budgetService: BudgetService) {}
 
-  async getReport(budgetId: BudgetId, userId: UserId): Promise<ReportData> {
-    const budget = await this.budgetService.findBudgetWithTransactionsAndCategoriesByIdAndUserId(
-      budgetId,
-      userId,
-    )
+  async getReport(budgetId: BudgetId, userId: UserId, range: DateRange): Promise<ReportData> {
+    const transactions = await this.budgetService.getBudgetTransactions(budgetId, userId, range)
 
-    if (!budget) {
-      throw new NotFoundException('There is no such budget')
-    }
-
-    const transactions = budget.transactions
-
-    return this.getReportData(transactions)
-  }
-
-  async getMonthReport(budgetId: BudgetId, userId: UserId): Promise<ReportData> {
-    const budget = await this.budgetService.findBudgetWithTransactionsAndCategoriesByIdAndUserId(
-      budgetId,
-      userId,
-    )
-
-    if (!budget) {
-      throw new NotFoundException('There is no such budget')
-    }
-
-    const transactions = budget.transactions
-
-    const currentMonth = new Date().getMonth()
-    const currentYear = new Date().getFullYear()
-
-    const currentMonthTransactions = transactions.filter(transaction => {
-      const transactionMonth = new Date(transaction.date).getMonth()
-      const transactionYear = new Date(transaction.date).getFullYear()
-      return transactionMonth === currentMonth && transactionYear === currentYear
-    })
-
-    return this.getReportData(currentMonthTransactions)
-  }
-
-  async getCustomRangeReport(
-    budgetId: BudgetId,
-    userId: UserId,
-    range: DateQueryParamsDto,
-  ): Promise<ReportData> {
-    const budget = await this.budgetService.findBudgetWithTransactionsAndCategoriesByIdAndUserId(
-      budgetId,
-      userId,
-    )
-
-    if (!budget) {
-      throw new NotFoundException('There is no such budget')
-    }
-
-    const transactions = budget.transactions
-
-    const transactionsFromRange = transactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date)
-
-      return transactionDate >= new Date(range.start) && transactionDate <= new Date(range.end)
-    })
-
-    return this.getReportData(transactionsFromRange)
+    return transactions ? this.getReportData(transactions) : this.getReportData([])
   }
 
   private getReportData(transactions: Transaction[]): ReportData {
@@ -101,36 +39,29 @@ export class ReportService {
     }
   }
 
-  async getIncomes(
+  async getTransactionsBySearchOptions(
     budgetId: BudgetId,
     userId: UserId,
-    options: CategoryAndDateQueryParamsDto,
+    searchOptions: SearchOptions,
   ): Promise<Transaction[]> {
-    const budget = await this.budgetService.findBudgetWithTransactionsAndCategoriesByIdAndUserId(
+    const transactions = await this.budgetService.getBudgetTransactionsBySearchOptions(
       budgetId,
       userId,
+      searchOptions,
     )
 
-    if (!budget) {
-      throw new NotFoundException('There is no such budget')
-    }
+    return transactions ? transactions : []
+  }
 
-    let incomes = budget.transactions.filter(
-      transaction => transaction.type === TransactionType.INCOME,
-    )
+  async getAllReports(userId: UserId, range: DateRange) {
+    const budgets = await this.budgetService.getAllBudgetsWithTransactions(userId, range)
 
-    if (options.category) {
-      incomes = incomes.filter(income => income.category.name === options.category)
-    }
-
-    if (options.start && options.end) {
-      incomes = incomes.filter(income => {
-        const incomeDate = new Date(income.date)
-
-        return incomeDate >= new Date(options.start) && incomeDate <= new Date(options.end)
-      })
-    }
-
-    return incomes
+    return budgets.map(budget => {
+      const reportData = this.getReportData(budget.transactions)
+      return {
+        name: budget.name,
+        ...reportData,
+      }
+    })
   }
 }

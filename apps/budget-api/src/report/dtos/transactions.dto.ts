@@ -1,6 +1,6 @@
 import { Expose, Transform } from 'class-transformer'
 
-export class IncomesDto {
+export class TransactionDto {
   @Transform(({ obj }) => obj.category.name)
   @Expose()
   category: string

@@ -30,7 +30,7 @@ export class TransactionService {
   async create(data: CreateTransactionDto, user: User): Promise<Transaction> {
     const { categoryId, budgetId, ...transactionData } = data
 
-    const budget = await this.budgetService.checkUserAccessToBudget(budgetId, user.id)
+    const budget = await this.budgetService.getBudgetIfUserHasAccess(budgetId, user.id)
 
     if (!budget) {
       throw new NotFoundException('There is no such budget')

@@ -40,3 +40,12 @@ export class ReportResponse {
   @Expose()
   balance: number
 }
+
+export class BudgetReportResponse extends ReportResponse {
+  constructor() {
+    super()
+  }
+
+  @Expose()
+  name: string
+}

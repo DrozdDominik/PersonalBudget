@@ -28,3 +28,8 @@ export type CustomCategoryIdentificationData = {
   categoryId: CategoryId
   userId: UserId
 }
+
+export type DateRange = {
+  start: string
+  end: string
+}

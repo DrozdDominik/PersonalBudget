@@ -3,15 +3,28 @@ import { ReportService } from './report.service'
 import { AuthGuard } from '@nestjs/passport'
 import { CurrentUser } from '../decorators/current-user.decorator'
 import { User } from '../user/user.entity'
-import { BudgetId } from '../budget/types'
+import { BudgetId, SearchOptions } from '../budget/types'
 import { Serialize } from '../interceptors/serialize.interceptor'
-import { ReportResponse } from './dtos/report.dto'
+import { BudgetReportResponse, ReportResponse } from './dtos/report.dto'
 import { CategoryAndDateQueryParamsDto, DateQueryParamsDto } from './dtos/date-query-params.dto'
-import { IncomesDto } from './dtos/incomes.dto'
+import { TransactionDto } from './dtos/transactions.dto'
+import { TransactionType } from '../transaction/types'
+import { DateRange } from '../types'
 
 @Controller('report')
 export class ReportController {
   constructor(private reportService: ReportService) {}
+
+  @UseGuards(AuthGuard('jwt'))
+  @Serialize(BudgetReportResponse)
+  @Get('/')
+  getAllReports(
+    @Param('id') budgetId: BudgetId,
+    @Query() dateRange: DateQueryParamsDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.reportService.getAllReports(user.id, dateRange)
+  }
 
   @UseGuards(AuthGuard('jwt'))
   @Serialize(ReportResponse)
@@ -21,28 +34,46 @@ export class ReportController {
     @Query() dateRange: DateQueryParamsDto,
     @CurrentUser() user: User,
   ) {
-    if (dateRange.start && dateRange.end) {
-      return this.reportService.getCustomRangeReport(budgetId, user.id, dateRange)
-    }
-
-    return this.reportService.getReport(budgetId, user.id)
+    return this.reportService.getReport(budgetId, user.id, dateRange)
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Serialize(IncomesDto)
+  @Serialize(TransactionDto)
   @Get('/:id/incomes')
   getIncomes(
     @Param('id') budgetId: BudgetId,
     @Query() options: CategoryAndDateQueryParamsDto,
     @CurrentUser() user: User,
   ) {
-    return this.reportService.getIncomes(budgetId, user.id, options)
+    const dateRange: DateRange | undefined =
+      options.start && options.end ? { start: options.start, end: options.end } : undefined
+
+    const searchOptions: SearchOptions = {
+      type: TransactionType.INCOME,
+      category: options.category,
+      dateRange,
+    }
+
+    return this.reportService.getTransactionsBySearchOptions(budgetId, user.id, searchOptions)
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Serialize(ReportResponse)
-  @Get('/:id/month')
-  getMonthReport(@Param('id') budgetId: BudgetId, @CurrentUser() user: User) {
-    return this.reportService.getMonthReport(budgetId, user.id)
+  @Serialize(TransactionDto)
+  @Get('/:id/expenses')
+  getExpenses(
+    @Param('id') budgetId: BudgetId,
+    @Query() options: CategoryAndDateQueryParamsDto,
+    @CurrentUser() user: User,
+  ) {
+    const dateRange: DateRange | undefined =
+      options.start && options.end ? { start: options.start, end: options.end } : undefined
+
+    const searchOptions: SearchOptions = {
+      type: TransactionType.EXPENSE,
+      category: options.category,
+      dateRange,
+    }
+
+    return this.reportService.getTransactionsBySearchOptions(budgetId, user.id, searchOptions)
   }
 }
