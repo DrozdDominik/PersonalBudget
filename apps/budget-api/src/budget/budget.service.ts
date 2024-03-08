@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Budget } from './budget.entity'
-import { Brackets, Repository } from 'typeorm'
+import { Brackets, Repository, SelectQueryBuilder } from 'typeorm'
 import { User } from '../user/user.entity'
 import { UserId } from '../user/types'
 import { BudgetId, BudgetWithUsers, SearchOptions } from './types'
@@ -53,17 +53,31 @@ export class BudgetService {
     })
   }
 
+  private joinUsersQuery(): SelectQueryBuilder<Budget> {
+    return this.budgetRepository
+      .createQueryBuilder('budget')
+      .leftJoinAndSelect('budget.users', 'user')
+  }
+
+  private joinUsersOwnerTransactionQuery(): SelectQueryBuilder<Budget> {
+    return this.joinUsersQuery()
+      .leftJoinAndSelect('budget.owner', 'owner')
+      .leftJoinAndSelect('budget.transactions', 'transactions')
+  }
+
+  private joinUsersTransactionQuery(): SelectQueryBuilder<Budget> {
+    return this.joinUsersQuery()
+      .leftJoinAndSelect('budget.transactions', 'transaction')
+      .leftJoinAndSelect('transaction.category', 'category')
+      .leftJoinAndSelect('transaction.user', 'transactionUser')
+  }
+
   async getBudgetTransactions(
     id: BudgetId,
     userId: UserId,
     dateRange: DateRange,
   ): Promise<Transaction[] | null> {
-    const query = this.budgetRepository
-      .createQueryBuilder('budget')
-      .leftJoinAndSelect('budget.users', 'user')
-      .leftJoinAndSelect('budget.transactions', 'transaction')
-      .leftJoinAndSelect('transaction.category', 'category')
-      .leftJoinAndSelect('transaction.user', 'transactionUser')
+    const query = this.joinUsersTransactionQuery()
       .where('budget.id = :id', { id })
       .andWhere(
         new Brackets(qb => {
@@ -91,9 +105,7 @@ export class BudgetService {
   }
 
   async getBudgetIfUserHasAccess(id: BudgetId, userId: UserId): Promise<Budget | null> {
-    return await this.budgetRepository
-      .createQueryBuilder('budget')
-      .leftJoinAndSelect('budget.users', 'user')
+    return await this.joinUsersQuery()
       .where('budget.id = :id', { id })
       .andWhere(
         new Brackets(qb => {
@@ -121,11 +133,7 @@ export class BudgetService {
 
   async getBudget(budgetId: BudgetId, userId?: UserId): Promise<BudgetWithUsers> {
     const budget = userId
-      ? await this.budgetRepository
-          .createQueryBuilder('budget')
-          .leftJoinAndSelect('budget.owner', 'owner')
-          .leftJoinAndSelect('budget.users', 'user')
-          .leftJoinAndSelect('budget.transactions', 'transactions')
+      ? await this.joinUsersOwnerTransactionQuery()
           .where('budget.id = :id', { id: budgetId })
           .andWhere(
             new Brackets(qb => {
@@ -214,11 +222,7 @@ export class BudgetService {
   }
 
   async getAllSharedBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
-    const budgets = await this.budgetRepository
-      .createQueryBuilder('budget')
-      .leftJoinAndSelect('budget.owner', 'owner')
-      .leftJoinAndSelect('budget.users', 'user')
-      .leftJoinAndSelect('budget.transactions', 'transactions')
+    const budgets = await this.joinUsersOwnerTransactionQuery()
       .where('owner.id != :userId', { userId })
       .andWhere('user.id = :userId', { userId })
       .getMany()
@@ -243,11 +247,7 @@ export class BudgetService {
   }
 
   async getAllUserBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
-    const budgets = await this.budgetRepository
-      .createQueryBuilder('budget')
-      .leftJoinAndSelect('budget.owner', 'owner')
-      .leftJoinAndSelect('budget.users', 'user')
-      .leftJoinAndSelect('budget.transactions', 'transactions')
+    const budgets = await this.joinUsersOwnerTransactionQuery()
       .where('owner.id = :userId', { userId })
       .orWhere('user.id = :userId', { userId })
       .getMany()
@@ -277,17 +277,11 @@ export class BudgetService {
   ): Promise<BudgetWithUsers[]> {
     let budgets: Budget[]
 
-    const query = this.budgetRepository
-      .createQueryBuilder('budget')
-      .leftJoinAndSelect('budget.users', 'user')
-      .leftJoinAndSelect('budget.transactions', 'transaction')
-      .leftJoinAndSelect('transaction.category', 'category')
-      .leftJoinAndSelect('transaction.user', 'transactionUser')
-      .andWhere(
-        new Brackets(qb => {
-          qb.where('budget.owner.id = :userId', { userId }).orWhere('user.id = :userId', { userId })
-        }),
-      )
+    const query = this.joinUsersTransactionQuery().andWhere(
+      new Brackets(qb => {
+        qb.where('budget.owner.id = :userId', { userId }).orWhere('user.id = :userId', { userId })
+      }),
+    )
 
     if (dateRange.start && dateRange.end) {
       const start = new Date(dateRange.start)
@@ -393,12 +387,7 @@ export class BudgetService {
       end.setHours(23, 59, 59, 999)
     }
 
-    const query = this.budgetRepository
-      .createQueryBuilder('budget')
-      .leftJoinAndSelect('budget.users', 'user')
-      .leftJoinAndSelect('budget.transactions', 'transaction')
-      .leftJoinAndSelect('transaction.category', 'category')
-      .leftJoinAndSelect('transaction.user', 'transactionUser')
+    const query = this.joinUsersTransactionQuery()
       .where('budget.id = :id', { id: budgetId })
       .andWhere(
         new Brackets(qb => {
