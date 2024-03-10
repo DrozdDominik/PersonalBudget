@@ -11,6 +11,8 @@ import { AuthGuard } from '@nestjs/passport'
 import { NextFunction } from 'express'
 import { ReportController } from '../report.controller'
 import { ReportService } from '../report.service'
+import { BudgetService } from '../../budget/budget.service'
+import { Budget } from '../../budget/budget.entity'
 
 describe('BalanceController', () => {
   let controller: ReportController
@@ -25,8 +27,13 @@ describe('BalanceController', () => {
       providers: [
         ReportService,
         UserService,
+        BudgetService,
         {
           provide: getRepositoryToken(User),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Budget),
           useClass: Repository,
         },
       ],
