@@ -58,7 +58,7 @@ describe('TransactionService', () => {
 
   const editedData: Partial<CreateTransactionDto> = {
     categoryId: faker.string.uuid() as CategoryId,
-    amount: Number(faker.finance.amount(0, 1000000, 2)),
+    amount: faker.number.float({ min: 0, max: 1000000, fractionDigits: 2 }),
   }
 
   const editedCategory: Category = {
@@ -118,7 +118,7 @@ describe('TransactionService', () => {
   const transactionData: CreateTransactionDto = {
     type: TransactionType.INCOME,
     categoryId: faker.string.uuid() as CategoryId,
-    amount: Number(faker.finance.amount(0, 1000000, 2)),
+    amount: faker.number.float({ min: 0, max: 1000000, fractionDigits: 2 }),
     date: faker.date.anytime({ refDate: '18-06-2023' }),
     budgetId: faker.string.uuid() as BudgetId,
   }
@@ -128,7 +128,7 @@ describe('TransactionService', () => {
     name: faker.word.noun(),
     owner: firstUser,
     transactions: [],
-    users: Promise.resolve([]),
+    users: [],
   }
 
   beforeEach(async () => {
@@ -261,7 +261,7 @@ describe('TransactionService', () => {
 
       vi.spyOn(repo, 'create').mockReturnValueOnce(createdTransaction)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(category)
-      vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(firstUserBudget)
+      vi.spyOn(budgetService, 'getBudgetIfUserHasAccess').mockResolvedValueOnce(firstUserBudget)
 
       await service.create(transactionData, firstUser)
 
@@ -269,7 +269,7 @@ describe('TransactionService', () => {
     })
 
     it('should throw error if budget not exists', async () => {
-      vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(null)
+      vi.spyOn(budgetService, 'getBudgetIfUserHasAccess').mockResolvedValueOnce(null)
 
       await expect(service.create(transactionData, firstUser)).rejects.toThrowError(
         NotFoundException,
@@ -277,7 +277,7 @@ describe('TransactionService', () => {
     })
 
     it('should throw error if category not exists', async () => {
-      vi.spyOn(budgetService, 'checkUserAccessToBudget').mockResolvedValueOnce(firstUserBudget)
+      vi.spyOn(budgetService, 'getBudgetIfUserHasAccess').mockResolvedValueOnce(firstUserBudget)
       vi.spyOn(categoryService, 'findDefaultOrCustomByUserAndId').mockResolvedValueOnce(null)
 
       await expect(service.create(transactionData, firstUser)).rejects.toThrowError(
@@ -353,7 +353,7 @@ describe('TransactionService', () => {
       ).rejects.toThrowError(ForbiddenException)
     })
 
-    it('should not throw error if admin get transaction belongs to another user', async () => {
+    it('should not throw error if admin getBudget transaction belongs to another user', async () => {
       vi.spyOn(repo, 'findOne').mockResolvedValueOnce(firstUserTransaction)
 
       const transaction = await service.getOne(firstUserTransaction.id, adminIdentificationData)

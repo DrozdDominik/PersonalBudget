@@ -17,7 +17,7 @@ export const budgetFactory = (quantity: number = 1) => {
       id: faker.string.uuid() as BudgetId,
       name: faker.word.noun(),
       owner: user,
-      users: Promise.resolve([]),
+      users: [],
       transactions: [],
     }
     budgets.push(budget)

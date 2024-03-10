@@ -118,7 +118,7 @@ describe('TransactionController', () => {
     it('should return 200 code and TransactionResponse', () => {
       const editedData: EditTransactionDto = {
         type: TransactionType.EXPENSE,
-        amount: Number(faker.finance.amount(0, 1000000, 2)),
+        amount: faker.number.float({ min: 0, max: 1000000, fractionDigits: 2 }),
       }
 
       const [transaction] = transactionFactory(1, TransactionType.INCOME)

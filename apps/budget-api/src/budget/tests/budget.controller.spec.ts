@@ -274,7 +274,7 @@ describe('BudgetController', () => {
         transactions: budget.transactions,
       }
 
-      vi.spyOn(service, 'get').mockResolvedValueOnce(budget)
+      vi.spyOn(service, 'getBudget').mockResolvedValueOnce(budget)
 
       return request(app.getHttpServer())
         .get(`/budget/${budget.id}`)

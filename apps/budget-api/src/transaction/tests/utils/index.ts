@@ -28,7 +28,7 @@ export const transactionFactory = (
     const transaction: Transaction = {
       id: faker.string.uuid() as TransactionId,
       type,
-      amount: Number(faker.finance.amount(0, 1000000, 2)),
+      amount: faker.number.float({ min: 0, max: 1000000, fractionDigits: 2 }),
       date: faker.date.anytime(),
       comment: null,
       category,
