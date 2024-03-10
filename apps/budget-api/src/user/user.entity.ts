@@ -48,5 +48,5 @@ export class User {
 
   @ManyToMany(() => Budget, budget => budget.users)
   @JoinTable()
-  sharedBudgets: Promise<Budget[]>
+  sharedBudgets: Budget[]
 }

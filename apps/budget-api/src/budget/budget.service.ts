@@ -4,7 +4,7 @@ import { Budget } from './budget.entity'
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm'
 import { User } from '../user/user.entity'
 import { UserId } from '../user/types'
-import { BudgetId, BudgetWithUsers, SearchOptions } from './types'
+import { BudgetId, BudgetNameAndTransactions, BudgetWithUsers, SearchOptions } from './types'
 import { UserService } from '../user/user.service'
 import { deleteUserFromBudgetUsers, isUserAmongBudgetUsers } from './utils'
 import { DateRange } from '../types'
@@ -70,6 +70,14 @@ export class BudgetService {
       .leftJoinAndSelect('budget.transactions', 'transaction')
       .leftJoinAndSelect('transaction.category', 'category')
       .leftJoinAndSelect('transaction.user', 'transactionUser')
+  }
+
+  private async loadBudgetUsers(budget: Budget): Promise<User[]> {
+    return await this.budgetRepository
+      .createQueryBuilder('budget')
+      .relation(Budget, 'users')
+      .of(budget)
+      .loadMany()
   }
 
   async getBudgetTransactions(
@@ -149,7 +157,7 @@ export class BudgetService {
       throw new NotFoundException()
     }
 
-    const users = await budget.users
+    const users = await this.loadBudgetUsers(budget)
 
     return {
       ...budget,
@@ -174,7 +182,7 @@ export class BudgetService {
       throw new NotFoundException('User not found')
     }
 
-    const budgetUsers = await budget.users
+    const budgetUsers = await this.loadBudgetUsers(budget)
 
     if (isUserAmongBudgetUsers(newUserId, budgetUsers)) {
       throw new BadRequestException('Already has access')
@@ -182,7 +190,7 @@ export class BudgetService {
 
     budgetUsers.push(newUser)
 
-    budget.users = Promise.resolve(budgetUsers)
+    budget.users = budgetUsers
 
     try {
       await this.budgetRepository.save(budget)
@@ -197,28 +205,9 @@ export class BudgetService {
   }
 
   async getAllOwnBudgets(ownerId: UserId): Promise<BudgetWithUsers[]> {
-    const budgets = await this.budgetRepository.find({
-      relations: {
-        owner: true,
-        users: true,
-        transactions: true,
-      },
-      where: {
-        owner: {
-          id: ownerId,
-        },
-      },
-    })
-
-    return await Promise.all(
-      budgets.map(async budget => {
-        const users = await budget.users
-        return {
-          ...budget,
-          users,
-        }
-      }),
-    )
+    return this.joinUsersOwnerTransactionQuery()
+      .where('owner.id = :userId', { userId: ownerId })
+      .getMany()
   }
 
   async getAllSharedBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
@@ -227,17 +216,9 @@ export class BudgetService {
       .andWhere('user.id = :userId', { userId })
       .getMany()
 
-    for (const budget of budgets) {
-      budget.users = this.budgetRepository
-        .createQueryBuilder('budget')
-        .relation(Budget, 'users')
-        .of(budget)
-        .loadMany()
-    }
-
     return await Promise.all(
       budgets.map(async budget => {
-        const users = await budget.users
+        const users = await this.loadBudgetUsers(budget)
         return {
           ...budget,
           users,
@@ -252,17 +233,9 @@ export class BudgetService {
       .orWhere('user.id = :userId', { userId })
       .getMany()
 
-    for (const budget of budgets) {
-      budget.users = this.budgetRepository
-        .createQueryBuilder('budget')
-        .relation(Budget, 'users')
-        .of(budget)
-        .loadMany()
-    }
-
     return await Promise.all(
       budgets.map(async budget => {
-        const users = await budget.users
+        const users = await this.loadBudgetUsers(budget)
         return {
           ...budget,
           users,
@@ -271,10 +244,10 @@ export class BudgetService {
     )
   }
 
-  async getAllBudgetsWithTransactions(
+  async getAllBudgetsNamesAndTransactions(
     userId: UserId,
     dateRange: DateRange,
-  ): Promise<BudgetWithUsers[]> {
+  ): Promise<BudgetNameAndTransactions[]> {
     let budgets: Budget[]
 
     const query = this.joinUsersTransactionQuery().andWhere(
@@ -297,15 +270,10 @@ export class BudgetService {
       budgets = await query.getMany()
     }
 
-    return await Promise.all(
-      budgets.map(async budget => {
-        const users = await budget.users
-        return {
-          ...budget,
-          users,
-        }
-      }),
-    )
+    return budgets.map(budget => ({
+      name: budget.name,
+      transactions: budget.transactions,
+    }))
   }
 
   async editName(id: BudgetId, ownerId: UserId, newName: string): Promise<Budget> {
@@ -333,7 +301,7 @@ export class BudgetService {
       throw new NotFoundException('There is no budget')
     }
 
-    const users = await budget.users
+    const users = budget.users
 
     if (!isUserAmongBudgetUsers(userId, users)) {
       throw new NotFoundException('There is no such budget user')
@@ -341,7 +309,7 @@ export class BudgetService {
 
     const filteredUsers = deleteUserFromBudgetUsers(userId, users)
 
-    budget.users = Promise.resolve(filteredUsers)
+    budget.users = filteredUsers
 
     try {
       await this.budgetRepository.save(budget)

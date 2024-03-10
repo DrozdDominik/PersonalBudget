@@ -2,6 +2,7 @@ import { Budget } from '../budget.entity'
 import { User } from '../../user/user.entity'
 import { TransactionType } from '../../transaction/types'
 import { DateRange } from '../../types'
+import { Transaction } from '../../transaction/transaction.entity'
 
 export type BudgetId = string & { __BudgetId__: void }
 
@@ -11,4 +12,9 @@ export type SearchOptions = {
   type: TransactionType
   category?: string
   dateRange?: DateRange
+}
+
+export type BudgetNameAndTransactions = {
+  name: string
+  transactions: Transaction[]
 }

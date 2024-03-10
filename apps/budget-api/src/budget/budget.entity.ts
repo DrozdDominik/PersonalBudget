@@ -17,7 +17,7 @@ export class Budget {
   owner: User
 
   @ManyToMany(() => User, user => user.sharedBudgets)
-  users: Promise<User[]>
+  users: User[]
 
   @OneToMany(() => Transaction, transaction => transaction.budget)
   transactions: Transaction[]
