@@ -54,7 +54,7 @@ export class ReportService {
   }
 
   async getAllReports(userId: UserId, range: DateRange) {
-    const budgets = await this.budgetService.getAllBudgetsWithTransactions(userId, range)
+    const budgets = await this.budgetService.getAllBudgetsNamesAndTransactions(userId, range)
 
     return budgets.map(budget => {
       const reportData = this.getReportData(budget.transactions)
