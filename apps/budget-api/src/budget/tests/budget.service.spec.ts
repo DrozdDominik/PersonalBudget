@@ -73,6 +73,7 @@ describe('BudgetService', () => {
 
     it('should call budgetRepository.create method with correct data', async () => {
       vi.spyOn(service, 'findBudgetByOwnerAndName').mockResolvedValueOnce(null)
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(budget)
 
       await service.create(name, owner)
 
@@ -90,28 +91,18 @@ describe('BudgetService', () => {
     it('should throw error if there is no budget with provided id', async () => {
       const budgetId = faker.string.uuid() as BudgetId
       const user = owner
-      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findBudgetById').mockRejectedValueOnce(new NotFoundException())
 
-      await expect(service.delete(budgetId, user.id)).rejects.toThrowError(NotFoundException)
-    })
-
-    it('should call budgetRepository with correct budget id when only budgetId is provided', async () => {
-      const budgetId = budget.id
-      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
-      vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
-
-      await service.delete(budgetId)
-
-      expect(repo.delete).toHaveBeenCalledWith(budget.id)
+      await expect(service.delete(budgetId, user)).rejects.toThrowError(NotFoundException)
     })
 
     it('should call budgetRepository with correct budget id when budgetId and correct ownerId are provided', async () => {
       const budgetId = budget.id
       const user = owner
-      vi.spyOn(service, 'findBudgetByIdAndOwner').mockResolvedValueOnce(budget)
+      vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
       vi.spyOn(repo, 'delete').mockResolvedValueOnce({ raw: [], affected: 1 })
 
-      await service.delete(budgetId, user.id)
+      await service.delete(budgetId, user)
 
       expect(repo.delete).toHaveBeenCalledWith(budget.id)
     })
@@ -122,7 +113,7 @@ describe('BudgetService', () => {
       const budgetId = budget.id
       const budgetUsers = budget.users
       const userId = budgetUsers[0].id
-      vi.spyOn(service, 'findBudgetByIdAndOwner').mockResolvedValueOnce(null)
+      vi.spyOn(service, 'findBudgetByIdAndOwner').mockRejectedValue(new NotFoundException())
 
       await expect(service.removeUser(budgetId, owner.id, userId)).rejects.toThrowError(
         NotFoundException,
@@ -133,6 +124,8 @@ describe('BudgetService', () => {
       const budgetId = budget.id
       const userId = faker.string.uuid() as UserId
       vi.spyOn(service, 'findBudgetByIdAndOwner').mockResolvedValueOnce(budget)
+
+      vi.spyOn(userService, 'findUser').mockRejectedValue(new NotFoundException())
 
       await expect(service.removeUser(budgetId, owner.id, userId)).rejects.toThrowError(
         NotFoundException,
@@ -149,6 +142,8 @@ describe('BudgetService', () => {
       }
 
       vi.spyOn(service, 'findBudgetByIdAndOwner').mockResolvedValueOnce(budget)
+      vi.spyOn(userService, 'findUser').mockResolvedValueOnce(users[0])
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(budget)
 
       await service.removeUser(budgetId, owner.id, userId)
 
@@ -162,6 +157,7 @@ describe('BudgetService', () => {
       const newName = faker.word.noun()
 
       vi.spyOn(service, 'findBudgetByOwnerAndName').mockResolvedValueOnce(budget)
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(budget)
 
       await expect(service.editName(budgetId, owner.id, newName)).rejects.toThrowError(
         BadRequestException,
@@ -192,6 +188,8 @@ describe('BudgetService', () => {
       vi.spyOn(service, 'findBudgetById').mockResolvedValueOnce(budget)
 
       vi.spyOn(service, 'findBudgetByIdAndOwner').mockResolvedValueOnce(budget)
+
+      vi.spyOn(repo, 'save').mockResolvedValueOnce(budget)
 
       await service.editName(budgetId, owner.id, newName)
 
