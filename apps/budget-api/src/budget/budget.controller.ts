@@ -21,7 +21,6 @@ import { ShareBudgetDto, ShareBudgetResponseDto } from './dtos/share-budget-dto'
 import { GetBudgetDto } from './dtos/get-budget.dto'
 import { BudgetId, BudgetWithUsers } from './types'
 import { EditBudgetNameDto, EditBudgetResponseDto } from './dtos/edit-budget'
-import { UserRole } from '../user/types'
 
 @Controller('budget')
 export class BudgetController {
@@ -87,18 +86,13 @@ export class BudgetController {
   @Serialize(GetBudgetDto)
   @Get('/:id')
   getBudget(@Param('id') id: BudgetId, @CurrentUser() user: User): Promise<BudgetWithUsers> {
-    return user.role === UserRole.Admin
-      ? this.budgetService.getBudget(id)
-      : this.budgetService.getBudget(id, user.id)
+    return this.budgetService.getBudget(id, user)
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Serialize(GetBudgetDto)
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteBudget(@Param('id') id: BudgetId, @CurrentUser() user: User): Promise<void> {
-    return user.role === UserRole.Admin
-      ? this.budgetService.delete(id)
-      : this.budgetService.delete(id, user.id)
+    return this.budgetService.delete(id, user)
   }
 }

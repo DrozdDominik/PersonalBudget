@@ -1,12 +1,17 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Budget } from './budget.entity'
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm'
 import { User } from '../user/user.entity'
-import { UserId } from '../user/types'
+import { UserId, UserRole } from '../user/types'
 import { BudgetId, BudgetNameAndTransactions, BudgetWithUsers, SearchOptions } from './types'
 import { UserService } from '../user/user.service'
-import { deleteUserFromBudgetUsers, isUserAmongBudgetUsers } from './utils'
 import { DateRange } from '../types'
 import { Transaction } from '../transaction/transaction.entity'
 
@@ -19,38 +24,41 @@ export class BudgetService {
   ) {}
 
   async findBudgetByOwnerAndName(name: string, ownerId: UserId): Promise<Budget | null> {
-    return await this.budgetRepository.findOne({
-      where: {
-        name,
-        owner: {
-          id: ownerId,
+    return await this.budgetRepository
+      .findOne({
+        where: {
+          name,
+          owner: {
+            id: ownerId,
+          },
         },
-      },
-    })
+      })
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budget data.`)
+      })
   }
 
   async findBudgetById(id: BudgetId): Promise<Budget | null> {
-    return await this.budgetRepository.findOne({
-      relations: {
-        owner: true,
-        users: true,
-        transactions: true,
-      },
-      where: {
-        id,
-      },
-    })
+    return await this.budgetRepository
+      .findOne({
+        relations: {
+          owner: true,
+          users: true,
+          transactions: true,
+        },
+        where: {
+          id,
+        },
+      })
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budget data.`)
+      })
   }
 
   async findBudgetByIdAndOwner(id: BudgetId, ownerId: UserId): Promise<Budget | null> {
-    return await this.budgetRepository.findOne({
-      where: {
-        id,
-        owner: {
-          id: ownerId,
-        },
-      },
-    })
+    const budget = await this.getBudgetById(id)
+    this.assertOwnership(budget, ownerId)
+    return budget
   }
 
   private joinUsersQuery(): SelectQueryBuilder<Budget> {
@@ -67,9 +75,13 @@ export class BudgetService {
 
   private joinUsersTransactionQuery(): SelectQueryBuilder<Budget> {
     return this.joinUsersQuery()
-      .leftJoinAndSelect('budget.transactions', 'transaction')
+      .leftJoinAndSelect('budget.transactions', 'transactions')
       .leftJoinAndSelect('transaction.category', 'category')
       .leftJoinAndSelect('transaction.user', 'transactionUser')
+  }
+
+  private joinUsersOwnerQuery(): SelectQueryBuilder<Budget> {
+    return this.joinUsersQuery().leftJoinAndSelect('budget.owner', 'owner')
   }
 
   private async loadBudgetUsers(budget: Budget): Promise<User[]> {
@@ -78,6 +90,9 @@ export class BudgetService {
       .relation(Budget, 'users')
       .of(budget)
       .loadMany()
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budget users data.`)
+      })
   }
 
   async getBudgetTransactions(
@@ -93,21 +108,16 @@ export class BudgetService {
         }),
       )
 
-    let budget: Budget
-
     if (dateRange.start && dateRange.end) {
-      const start = new Date(dateRange.start)
-      start.setHours(0, 0, 0, 0)
-
-      const end = new Date(dateRange.end)
-      end.setHours(23, 59, 59, 999)
-
-      budget = await query
-        .andWhere('transaction.date BETWEEN :start AND :end', { start, end })
-        .getOne()
-    } else {
-      budget = await query.getOne()
+      query.andWhere('transaction.date BETWEEN :start AND :end', {
+        start: dateRange.start,
+        end: dateRange.end,
+      })
     }
+
+    const budget = await query.getOne().catch(() => {
+      throw new Error(`An error occurred while retrieving budget transactions data.`)
+    })
 
     return budget ? budget.transactions : null
   }
@@ -121,6 +131,9 @@ export class BudgetService {
         }),
       )
       .getOne()
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budget data.`)
+      })
   }
 
   async create(name: string, owner: User): Promise<Budget> {
@@ -136,78 +149,56 @@ export class BudgetService {
       owner,
     })
 
-    return this.budgetRepository.save(budget)
+    return this.budgetRepository.save(budget).catch(() => {
+      throw new Error(`Create new budget failed`)
+    })
   }
 
-  async getBudget(budgetId: BudgetId, userId?: UserId): Promise<BudgetWithUsers> {
-    const budget = userId
-      ? await this.joinUsersOwnerTransactionQuery()
-          .where('budget.id = :id', { id: budgetId })
-          .andWhere(
-            new Brackets(qb => {
-              qb.where('owner.id = :userId', { userId }).orWhere('user.id = :userId', {
-                userId,
-              })
-            }),
-          )
-          .getOne()
-      : await this.findBudgetById(budgetId)
+  async getBudget(budgetId: BudgetId, user: User): Promise<BudgetWithUsers> {
+    const budget = await this.joinUsersOwnerTransactionQuery()
+      .where('budget.id = :id', { id: budgetId })
+      .leftJoinAndSelect('budget.users', 'users')
+      .getOne()
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budget data.`)
+      })
 
     if (!budget) {
-      throw new NotFoundException()
+      throw new NotFoundException(`Budget with ID ${budgetId} not found`)
     }
 
-    const users = await this.loadBudgetUsers(budget)
+    this.checkAccess(budget, user)
 
-    return {
-      ...budget,
-      users,
-    }
+    return budget
   }
 
   async addUser(budgetId: BudgetId, ownerId: UserId, newUserId: UserId): Promise<BudgetWithUsers> {
     const budget = await this.findBudgetByIdAndOwner(budgetId, ownerId)
 
-    if (!budget) {
-      throw new NotFoundException('Budget not found')
-    }
-
     if (ownerId === newUserId) {
       throw new BadRequestException('Cannot share budget with yourself')
     }
 
-    const newUser = await this.userService.findOneById(newUserId)
+    const newUser = await this.userService.findUser(newUserId)
 
-    if (!newUser) {
-      throw new NotFoundException('User not found')
-    }
-
-    const budgetUsers = await this.loadBudgetUsers(budget)
-
-    if (isUserAmongBudgetUsers(newUserId, budgetUsers)) {
+    if (this.isUser(budget, newUser)) {
       throw new BadRequestException('Already has access')
     }
 
-    budgetUsers.push(newUser)
+    budget.users.push(newUser)
 
-    budget.users = budgetUsers
-
-    try {
-      await this.budgetRepository.save(budget)
-    } catch (e) {
-      throw new Error(e)
-    }
-
-    return {
-      ...budget,
-      users: budgetUsers,
-    }
+    return await this.budgetRepository.save(budget).catch(() => {
+      throw new Error(`Add budget user failed`)
+    })
   }
 
   async getAllOwnBudgets(ownerId: UserId): Promise<BudgetWithUsers[]> {
     return this.joinUsersOwnerTransactionQuery()
       .where('owner.id = :userId', { userId: ownerId })
       .getMany()
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budgets data.`)
+      })
   }
 
   async getAllSharedBudgets(userId: UserId): Promise<BudgetWithUsers[]> {
@@ -215,6 +206,9 @@ export class BudgetService {
       .where('owner.id != :userId', { userId })
       .andWhere('user.id = :userId', { userId })
       .getMany()
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budgets data.`)
+      })
 
     return await Promise.all(
       budgets.map(async budget => {
@@ -232,6 +226,9 @@ export class BudgetService {
       .where('owner.id = :userId', { userId })
       .orWhere('user.id = :userId', { userId })
       .getMany()
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budgets data.`)
+      })
 
     return await Promise.all(
       budgets.map(async budget => {
@@ -266,8 +263,13 @@ export class BudgetService {
       budgets = await query
         .where('transaction.date BETWEEN :start AND :end', { start, end })
         .getMany()
+        .catch(() => {
+          throw new Error(`An error occurred while retrieving budgets data.`)
+        })
     } else {
-      budgets = await query.getMany()
+      budgets = await query.getMany().catch(() => {
+        throw new Error(`An error occurred while retrieving budgets data.`)
+      })
     }
 
     return budgets.map(budget => ({
@@ -291,52 +293,37 @@ export class BudgetService {
 
     budget.name = newName
 
-    return await this.budgetRepository.save(budget)
+    return await this.budgetRepository.save(budget).catch(() => {
+      throw new Error(`Edit budget name failed`)
+    })
   }
 
   async removeUser(budgetId: BudgetId, ownerId: UserId, userId: UserId): Promise<BudgetWithUsers> {
     const budget = await this.findBudgetByIdAndOwner(budgetId, ownerId)
 
-    if (!budget) {
-      throw new NotFoundException('There is no budget')
-    }
+    const user = await this.userService.findUser(userId)
 
-    const users = budget.users
-
-    if (!isUserAmongBudgetUsers(userId, users)) {
+    if (!this.isUser(budget, user)) {
       throw new NotFoundException('There is no such budget user')
     }
 
-    const filteredUsers = deleteUserFromBudgetUsers(userId, users)
+    budget.users = budget.users.filter(user => user.id !== userId)
 
-    budget.users = filteredUsers
+    await this.budgetRepository.save(budget).catch(() => {
+      throw new Error(`Remove budget user failed`)
+    })
 
-    try {
-      await this.budgetRepository.save(budget)
-    } catch (e) {
-      throw new Error(e)
-    }
-
-    return {
-      ...budget,
-      users: filteredUsers,
-    }
+    return budget
   }
 
-  async delete(budgetId: BudgetId, ownerId?: UserId): Promise<void> {
-    const budget = ownerId
-      ? await this.findBudgetByIdAndOwner(budgetId, ownerId)
-      : await this.findBudgetById(budgetId)
+  async delete(budgetId: BudgetId, user: User): Promise<void> {
+    const budget = await this.findBudgetById(budgetId)
 
-    if (!budget) {
-      throw new NotFoundException()
-    }
+    this.checkDeletionPermissions(budget, user)
 
-    try {
-      await this.budgetRepository.delete(budgetId)
-    } catch {
-      throw new Error(`Delete budget ${budget.id} failed`)
-    }
+    await this.budgetRepository.delete(budgetId).catch(() => {
+      throw new Error(`Delete budget ${budgetId} failed`)
+    })
   }
 
   async getBudgetTransactionsBySearchOptions(
@@ -372,8 +359,56 @@ export class BudgetService {
       query.andWhere('transaction.date BETWEEN :start AND :end', { start, end })
     }
 
-    const budget = await query.getOne()
+    const budget = await query.getOne().catch(() => {
+      throw new Error(`An error occurred while retrieving budget transactions.`)
+    })
 
     return budget ? budget.transactions : null
+  }
+
+  private isOwner(budget: Budget, userId: UserId): boolean {
+    return budget.owner.id === userId
+  }
+
+  private isUser(budget: Budget, user: User): boolean {
+    return budget.users.some(u => u.id === user.id)
+  }
+
+  private isAdmin(user: User): boolean {
+    return user.role === UserRole.Admin
+  }
+
+  private async getBudgetById(id: BudgetId): Promise<Budget> {
+    const budget = await this.joinUsersOwnerQuery()
+      .where('budget.id = :id', { id })
+      .getOne()
+      .catch(() => {
+        throw new Error(`An error occurred while retrieving budget data.`)
+      })
+
+    if (!budget) {
+      throw new NotFoundException(`Budget with ID ${id} not found`)
+    }
+    return budget
+  }
+
+  private checkAccess(budget: Budget, user: User): void {
+    if (!this.isOwner(budget, user.id) && !this.isUser(budget, user) && !this.isAdmin(user)) {
+      throw new ForbiddenException(`User with ID ${user.id} does not have access to the budget`)
+    }
+  }
+
+  private checkDeletionPermissions(budget: Budget, user: User): void {
+    if (!this.isOwner(budget, user.id) && !this.isAdmin(user)) {
+      throw new ForbiddenException(
+        `User with ID ${user.id} does not have permission to delete budget`,
+      )
+    }
+  }
+
+  private assertOwnership(budget: Budget, userId: UserId) {
+    if (!this.isOwner(budget, userId)) {
+      throw new ForbiddenException(`User with ID ${userId} is not the owner of the budget`)
+    }
   }
 }

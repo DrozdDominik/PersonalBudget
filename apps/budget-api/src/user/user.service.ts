@@ -125,4 +125,16 @@ export class UserService {
 
     return user
   }
+
+  async findUser(id: UserId) {
+    const user = await this.findOneById(id).catch(() => {
+      throw new Error(`An error occurred while retrieving user data.`)
+    })
+
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+
+    return user
+  }
 }
